@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 import React, { useMemo, useState, useRef, useEffect, Fragment } from "react";
 import localFont from "next/font/local";
 import Link from "next/link";
@@ -1851,12 +1852,7 @@ export default function BentonPowerPage() {
       {/* هدر و سبد خرید از طریق app/layout.tsx و <SiteHeader /> رندر می‌شوند */}
 
       <Hero lang={lang} />
-      <FeaturedProducts
-        lang={lang}
-        onAdd={() => {
-          /* فعلاً فقط دکمه کار ظاهری دارد؛ باز کردن سبد خرید را هدر مدیریت می‌کند */
-        }}
-      />
+<FeaturedProducts lang={lang} />
       <WhyUs lang={lang} />
       <Applications lang={lang} />
       <Clients lang={lang} />

@@ -1,5 +1,4 @@
 // app/why-us/on-time-delivery/page.tsx
-"use client";
 
 import type { Metadata } from "next";
 import Image from "next/image";
