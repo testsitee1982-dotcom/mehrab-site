@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* پس‌زمینه و رنگ متن را تیره می‌کنیم که با تم سایتت هماهنگ باشد */
+  --background: #020617;
+  --foreground: #f9fafb;
 }
 
 @theme inline {
@@ -12,18 +13,29 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* مقادیر حالت تیره را هم همان نگه می‌داریم تا تغییری نکند */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #020617;
+    --foreground: #f9fafb;
   }
+}
+
+/* یکدست کردن پس‌زمینه و حذف حاشیه و جلوگیری از اسکرول افقی */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #020617;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
 }
+
 @keyframes slow-spin {
   from {
     transform: translateX(-50%) rotate(0deg);
