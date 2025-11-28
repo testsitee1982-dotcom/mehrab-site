@@ -1,10 +1,15 @@
 // app/layout.tsx
 import "./globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import React from "react";
 
 import { SiteHeader } from "./ui/SiteHeader";
 import { SiteFooter } from "./ui/SiteFooter";
+
+export const viewport: Viewport = {
+  width: 1280,
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
   title: "رعد و برق مهراب | بنتونیت و مواد ارتینگ",
