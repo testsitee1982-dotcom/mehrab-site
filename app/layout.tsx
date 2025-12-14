@@ -16,18 +16,9 @@ export const metadata: Metadata = {
   description: "راهکارهای پیشرفته بنتونیت برای صنعت برق",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fa" dir="rtl">
-      <head>
-        {/* ✅ Enamad verification meta tag */}
-        <meta name="enamad" content="4266105" />
-      </head>
-
       <body className="min-h-screen text-white">
         <GlobalBackgroundPro />
         <SiteHeader />
@@ -38,7 +29,6 @@ export default function RootLayout({
   );
 }
 
-/* === Global background (بدون styled-jsx) === */
 function GlobalBackgroundPro() {
   const noise =
     "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnPjxmaWx0ZXIgaWQ9J24nPjxmZVR1cmJ1bGVuY2UgdHlwZT0nc3RpdGNoJyBhcWJsdWRlPScuMycvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPScxMDAlJyBoZWlnaHQ9JzEwMCUnIGZpbHRlcj0ndXJsKCNuKScgZmlsbD0nI2ZmZicgZmlsbC1vcGFjaXR5PScwLjAzJy8+PC9zdmc+";
@@ -54,12 +44,10 @@ function GlobalBackgroundPro() {
             "linear-gradient(180deg,#070b17 0%, #0b1220 35%, #0a0f1e 100%)",
         }}
       />
-
       <div
         className="absolute -top-40 left-1/2 h-[120vh] w-[120vw] -translate-x-1/2 opacity-[.16] blur-3xl bg-[conic-gradient(from_180deg_at_50%_50%,#0ea5e9,#6366f1,#f59e0b,#0ea5e9)] will-change-transform bg-animated"
         style={{ animation: "slow-spin 40s linear infinite" }}
       />
-
       <div
         className="absolute inset-0 opacity-[.18] will-change-transform bg-animated"
         style={{
@@ -72,7 +60,6 @@ function GlobalBackgroundPro() {
           animation: "floaty 18s ease-in-out infinite alternate",
         }}
       />
-
       <div
         className="absolute inset-0 opacity-20"
         style={{
@@ -80,7 +67,6 @@ function GlobalBackgroundPro() {
           backgroundSize: "22px 22px",
         }}
       />
-
       <div
         className="absolute inset-0"
         style={{
@@ -88,7 +74,6 @@ function GlobalBackgroundPro() {
             "radial-gradient(1200px 800px at 50% 0%, transparent 0%, rgba(0,0,0,.10) 60%, rgba(0,0,0,.22) 100%)",
         }}
       />
-
       <div
         className="absolute inset-0 mix-blend-soft-light opacity-40"
         style={{ backgroundImage: `url(${noise})` }}
