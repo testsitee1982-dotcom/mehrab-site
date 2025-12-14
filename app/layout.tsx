@@ -1,21 +1,16 @@
 // app/layout.tsx
 import "./globals.css";
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import React from "react";
 
 import { SiteHeader } from "./ui/SiteHeader";
 import { SiteFooter } from "./ui/SiteFooter";
 
-export const viewport: Viewport = {
-  width: 1280,
-  initialScale: 1,
-};
-
 export const metadata: Metadata = {
   title: "رعد و برق مهراب | بنتونیت و مواد ارتینگ",
   description: "راهکارهای پیشرفته بنتونیت برای صنعت برق",
 
-  // ✅ Enamad meta tag (داخل <head> تولید می‌شود)
+  // ✅ Enamad verification meta tag
   // خروجی نهایی: <meta name="enamad" content="4266105" />
   other: {
     enamad: "4266105",
