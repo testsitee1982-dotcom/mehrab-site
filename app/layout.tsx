@@ -14,6 +14,12 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "رعد و برق مهراب | بنتونیت و مواد ارتینگ",
   description: "راهکارهای پیشرفته بنتونیت برای صنعت برق",
+
+  // ✅ Enamad meta tag (داخل <head> تولید می‌شود)
+  // خروجی نهایی: <meta name="enamad" content="4266105" />
+  other: {
+    enamad: "4266105",
+  },
 };
 
 export default function RootLayout({
