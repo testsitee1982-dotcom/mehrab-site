@@ -2,7 +2,6 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 
 type Stats = {
   online: number;
@@ -278,6 +277,12 @@ export function SiteFooter() {
     []
   );
 
+  // ✅ کد رسمی اینماد (trustseal) — بدون نیاز به فایل PNG محلی
+  const ENAMAD_HREF =
+    "https://trustseal.enamad.ir/?id=5205347&Code=vxvhPMTUIDCfbz4gGKBAdPNu31vcaV2R";
+  const ENAMAD_IMG =
+    "https://trustseal.enamad.ir/logo.aspx?id=5205347&Code=vxvhPMTUIDCfbz4gGKBAdPNu31vcaV2R";
+
   return (
     <footer className="border-t border-white/10 bg-white/[0.04] backdrop-blur-xl">
       <div className="mx-auto w-[min(1200px,calc(100%-32px))] py-6">
@@ -398,7 +403,7 @@ export function SiteFooter() {
             </ul>
           </div>
 
-          {/* 5) برند + لوگو/اینماد  (✅ اصلاح شد: لوگو سمت راست، متن دوخط، مثل هدر) */}
+          {/* 5) برند + لوگو/اینماد  (لوگو سمت راست، متن دوخط، مثل هدر) */}
           <div className="order-1 lg:order-5">
             <div className="flex items-center justify-end gap-3 flex-row-reverse">
               <img
@@ -418,16 +423,26 @@ export function SiteFooter() {
               </div>
             </div>
 
+            {/* ✅ اینماد: لود از سرور اینماد (بدون فایل محلی) */}
             <div className="mt-4 flex items-center justify-end">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-                <Image
-                  src="/images/enamad.png"
+              <a
+                href={ENAMAD_HREF}
+                target="_blank"
+                rel="noreferrer"
+                referrerPolicy="origin"
+                className="rounded-2xl border border-white/10 bg-white/5 p-3 hover:bg-white/10 transition"
+                aria-label="نمایش نماد اعتماد الکترونیکی"
+              >
+                <img
+                  referrerPolicy="origin"
+                  src={ENAMAD_IMG}
                   alt="enamad"
                   width={120}
                   height={120}
-                  style={{ width: 120, height: 120 }}
+                  style={{ width: 120, height: 120, cursor: "pointer" }}
+                  loading="lazy"
                 />
-              </div>
+              </a>
             </div>
           </div>
         </div>
