@@ -7,6 +7,7 @@ import Link from "next/link";
 import { articles } from "./lib/articles";
 import { SiteFooter } from "./ui/SiteFooter";
 import Image from "next/image";
+import { products } from "./lib/products";
 
 // فونت‌ها (چون پوشه fonts داخل app است، مسیر نسبی می‌دهیم)
 const btitr = localFont({
@@ -303,72 +304,6 @@ const dictionaries: Record<keyof typeof languageMeta, typeof baseEN> = {
   ko: baseEN,
 };
 
-const products = [
-  {
-    id: "p1",
-    name: "بنتونیت اکتیو دار مخصوص ارتینگ",
-    img: "/images/products/700.png",
-    tds: "/docs/bentonite-active.pdf",
-        price: 580000,   // ← قیمت جدید
-    specs: ["قدرت جذب رطوبت بالا", "رسانایی الکتریکی عالی", "پایداری در شرایط محیطی مختلف"],
-  },
-  {
-    id: "p2",
-    name: "بنتونیت میکرونیزه مخصوص ارتینگ",
-    img: "/images/products/701.png",
-    tds: "/docs/bentonite-micronized.pdf",
-        price: 580000,   // ← قیمت جدید
-    specs: ["دانه‌بندی میکرونی یکنواخت", "حفظ رطوبت طولانی‌مدت", "افزایش ایمنی در سیستم ارت"],
-  },
-  {
-    id: "p3",
-    name: "ژل کاهنده مقاومت الکتریکی زمین LOM",
-    img: "/images/products/702.png",
-    tds: "/docs/lom-gel.pdf",
-        price: 580000,   // ← قیمت جدید
-    specs: ["افزایش سطح تماس با الکترود", "دوام بالا در برابر خشک شدن", "نصب سریع و آسان"],
-  },
-  {
-    id: "p4",
-    name: "LRM",
-    img: "/images/products/703.png",
-    tds: "/docs/lrm.pdf",
-        price: 580000,   // ← قیمت جدید
-    specs: ["فرمولاسیون خاص برای ارتینگ صنعتی", "پایداری حرارتی بالا", "رسانایی الکتریکی یکنواخت"],
-  },
-  {
-    id: "p5",
-    name: "سوپر اکتیو کاهنده ممتاز",
-    img: "/images/products/704.png",
-    tds: "/docs/super-active.pdf",
-        price: 580000,   // ← قیمت جدید
-    specs: ["بیشترین کاهش مقاومت زمین", "فاقد فلزات سنگین", "دارای گواهینامه ISO/IEC"],
-  },
-  {
-    id: "p6",
-    name: "GRM",
-    img: "/images/products/705.png",
-    tds: "/docs/grm.pdf",
-        price: 580000,   // ← قیمت جدید
-    specs: ["مناسب برای پروژه‌های ولتاژ بالا", "دوام طولانی‌مدت در خاک", "ترکیب خاص برای مقاومت پایین"],
-  },
-  {
-    id: "p7",
-    name: "خاک کاهنده سوپر اکتیو سدیم دار حاوی الکترولیت",
-    img: "/images/products/706.png",
-    tds: "/docs/sodium-electrolyte.pdf",
-        price: 580000,   // ← قیمت جدید
-    specs: ["بهبود سریع عملکرد ارت", "دارای مواد الکترولیت تقویت‌شده", "کارایی بالا در مناطق خشک"],
-  },
-  {
-    id: "p8",
-    name: "پودر اکتیو چندمنظوره صنعتی",
-    img: "/images/products/707.png",
-    tds: "/docs/multi-active.pdf",
-        price: 580000,   // ← قیمت جدید
-    specs: ["کاربرد در صنایع مختلف", "پایداری بالا در محیط‌های مرطوب", "مناسب برای شرایط سخت"],
-  },
-];
 
 const searchData = [
   ...products.map((p) => ({
@@ -955,13 +890,13 @@ function FeaturedProducts({ lang }: { lang: keyof typeof languageMeta }) {
                     <Icon name="ShoppingCart" size={16} />
                     {dict.addToCart}
                   </button>
-                  <a
-                    href={p.tds}
+                  <Link
+                    href={`/products/${p.id}`}
                     className={`btnGhost ${bnazanin.className}`}
                   >
                     <Icon name="BookOpenText" size={16} />
                     مشخصات
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -1424,14 +1359,14 @@ function Applications({ lang }: { lang: keyof typeof languageMeta }) {
       title: "سیستم‌های ارتینگ و صاعقه‌گیر",
       desc: "چاه ارت، مش ارت، الکترودهای عمقی و بهبود مقاومت ویژه خاک با بنتونیت و مواد کاهنده.",
       img: "/images/usecases/grounding-grid.png",
-      href: "/applications/grounding-and-lightning",
+      href: "/applications/grounding-systems",
     },
     {
       key: "substation",
       title: "پست‌های انتقال و توزیع",
       desc: "استفاده از خاک کاهنده، ژل‌های ویژه و بک‌فیل برای بهبود ایمنی شبکه و کاهش گام‌ولتاژ.",
       img: "/images/usecases/substation-backfill.png",
-      href: "/applications/substation-backfill",
+      href: "/applications/substation-grounding",
     },
     {
       key: "oil",

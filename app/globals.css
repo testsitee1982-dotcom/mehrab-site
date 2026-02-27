@@ -1,51 +1,100 @@
 @import "tailwindcss";
 
+/* فونت‌ها (BNazanin برای متن، BTitr برای تیترها) */
+@font-face {
+  font-family: "BNazanin";
+  src: url("/fonts/BNazanin.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BTitr";
+  src: url("/fonts/BTitr.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  /* پس‌زمینه و رنگ متن را تیره می‌کنیم که با تم سایتت هماهنگ باشد */
   --background: #020617;
   --foreground: #f9fafb;
+
+  --font-body: "BNazanin", Arial, Helvetica, sans-serif;
+  --font-heading: "BTitr", "BNazanin", Arial, Helvetica, sans-serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
-/* مقادیر حالت تیره را هم همان نگه می‌داریم تا تغییری نکند */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #020617;
-    --foreground: #f9fafb;
-  }
-}
-
-/* یکدست کردن پس‌زمینه و حذف حاشیه و جلوگیری از اسکرول افقی */
+/* پایه‌ی صفحه */
 html,
 body {
-  margin: 0;
-  padding: 0;
-  background-color: #020617;
+  height: 100%;
+}
+
+/* ✅ مهم: برای اینکه لینک‌های #... زیر هدر نرن
+   هدر شما دو ردیف دارد: (h-14 + h-12) ≈ 104px
+   کمی هم فاصله امن گذاشتیم */
+html {
+  scroll-padding-top: 112px;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+
+  /* فونت پیش‌فرض سایت */
+  font-family: var(--font-body);
+
+  /* Emoji fallback (برای نمایش درست ایموجی‌ها) */
+  font-variant-emoji: emoji;
+
   overflow-x: hidden;
 }
 
-@keyframes slow-spin {
-  from {
-    transform: translateX(-50%) rotate(0deg);
-  }
-  to {
-    transform: translateX(-50%) rotate(360deg);
-  }
+/* تیترها با BTitr */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
 }
 
-@keyframes floaty {
+/* اگر جایی تیتر با div/span ساخته شده بود، این کلاس را بده */
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+/* اگر خواستی متن را دستی برگردانی */
+.font-body {
+  font-family: var(--font-body);
+}
+
+/* 🔥 این کلاس را برای پرچم‌ها استفاده می‌کنیم */
+.emoji-flag {
+  font-family:
+    "Segoe UI Emoji",
+    "Segoe UI Symbol",
+    "Apple Color Emoji",
+    "Noto Color Emoji",
+    Arial,
+    sans-serif;
+}
+
+/* انتخاب متن */
+::selection {
+  background: #38bdf8;
+  color: #0b1220;
+}
+
+/* انیمیشن بک‌گراند */
+@keyframes bgFloat {
   0% {
     transform: translateY(0px);
   }
@@ -54,8 +103,14 @@ body {
   }
 }
 
-/* اگر کاربر کاهش انیمیشن خواسته باشد، افکت‌ها خاموش شوند */
+/* پشتیبانی از هر دو کلاس (برای جلوگیری از شکستن) */
+.bg-anim,
+.bg-animated {
+  animation: bgFloat 6s ease-in-out infinite alternate;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .bg-anim,
   .bg-animated {
     animation: none !important;
   }
