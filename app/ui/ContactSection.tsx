@@ -10,89 +10,127 @@ const OFFICE_ADDRESS =
 
 export function ContactSection() {
   const formId = useId();
+  const nameId = `${formId}-name`;
+  const emailId = `${formId}-email`;
+  const messageId = `${formId}-message`;
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   const mapTitle = useMemo(() => "نقشه موقعیت دفتر شرکت", []);
 
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
-    // اینجا اگر API ارسال پیام داری وصلش می‌کنیم (فعلاً جلوگیری از خطا)
-    // TODO: integrate POST /api/contact
-    alert("پیام شما ثبت شد (دمو). در مرحله بعد API را وصل می‌کنیم.");
-    setName("");
-    setEmail("");
-    setMessage("");
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      alert("لطفاً همه فیلدهای ضروری را تکمیل کنید.");
+      return;
+    }
+
+    setIsSending(true);
+
+    try {
+      alert("پیام شما ثبت شد. در مرحله بعد API ارسال ایمیل را وصل می‌کنیم.");
+      setName("");
+      setEmail("");
+      setMessage("");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const openMap = () => {
+    window.open(
+      `https://www.google.com/maps?q=${encodeURIComponent(OFFICE_ADDRESS)}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
   };
 
   return (
     <section id="contact" style={styles.section}>
       <div style={styles.container}>
-        {/* ✅ Grid دو ستونه: فرم (چپ) - نقشه (راست) */}
         <div style={styles.grid}>
-          {/* ✅ FORM (اول) */}
           <div style={styles.card}>
             <div style={styles.cardHeader}>
               <div>
                 <h3 style={styles.title}>تماس با ما</h3>
-                <p style={styles.subtitle}>برای دریافت مشاوره یا ثبت درخواست، پیام خود را ارسال کنید.</p>
+                <p style={styles.subtitle}>
+                  برای دریافت مشاوره یا ثبت درخواست، پیام خود را ارسال کنید.
+                </p>
               </div>
             </div>
 
             <form id={formId} onSubmit={onSubmit} style={styles.form}>
               <div style={styles.row}>
                 <div style={styles.field}>
-                  <label style={styles.label}>نام</label>
+                  <label htmlFor={nameId} style={styles.label}>
+                    نام
+                  </label>
                   <input
+                    id={nameId}
+                    name="name"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(event) => setName(event.target.value)}
                     style={styles.input}
-                    placeholder=""
                     required
+                    autoComplete="name"
                   />
                 </div>
 
                 <div style={styles.field}>
-                  <label style={styles.label}>ایمیل</label>
+                  <label htmlFor={emailId} style={styles.label}>
+                    ایمیل
+                  </label>
                   <input
+                    id={emailId}
+                    name="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(event) => setEmail(event.target.value)}
                     style={styles.input}
-                    placeholder=""
                     type="email"
                     required
+                    autoComplete="email"
+                    dir="ltr"
                   />
                 </div>
               </div>
 
               <div style={styles.field}>
-                <label style={styles.label}>پیام</label>
+                <label htmlFor={messageId} style={styles.label}>
+                  پیام
+                </label>
                 <textarea
+                  id={messageId}
+                  name="message"
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={(event) => setMessage(event.target.value)}
                   style={styles.textarea}
-                  placeholder=""
                   required
                 />
               </div>
 
               <div style={styles.actions}>
-                <button type="submit" style={styles.primaryButton}>
-                  ارسال پیام
+                <button
+                  type="submit"
+                  style={styles.primaryButton}
+                  disabled={isSending}
+                >
+                  {isSending ? "در حال ارسال..." : "ارسال پیام"}
                 </button>
               </div>
             </form>
           </div>
 
-          {/* ✅ MAP (دوم) */}
           <div style={styles.card}>
             <div style={styles.cardHeader}>
               <div>
                 <h3 style={styles.title}>موقعیت دفتر شرکت</h3>
-                <p style={styles.subtitle}>آدرس دقیق و مسیر دسترسی را در نقشه مشاهده کنید.</p>
+                <p style={styles.subtitle}>
+                  آدرس دقیق و مسیر دسترسی را در نقشه مشاهده کنید.
+                </p>
               </div>
             </div>
 
@@ -108,16 +146,7 @@ export function ContactSection() {
             </div>
 
             <div style={styles.cardFooter}>
-              <button
-                type="button"
-                style={styles.primaryButton}
-                onClick={() =>
-                  window.open(
-                    `https://www.google.com/maps?q=${encodeURIComponent(OFFICE_ADDRESS)}`,
-                    "_blank"
-                  )
-                }
-              >
+              <button type="button" style={styles.primaryButton} onClick={openMap}>
                 باز کردن در نقشه
               </button>
 
@@ -145,7 +174,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   grid: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
     gap: "18px",
     alignItems: "stretch",
   },
@@ -212,7 +241,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   row: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
     gap: 12,
   },
   field: {

@@ -1,9 +1,17 @@
 // app/articles/cec-moisture-specs-and-standards/page.tsx
-"use client";
-
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
+export const metadata: Metadata = {
+  title: "CEC، رطوبت و اندازه ذره: چگونه مشخصات فنی را تفسیر کنیم؟",
+  description:
+    "راهنمای تفسیر پارامترهای CEC، میزان رطوبت، توزیع اندازه ذرات و تاثیر آنها بر عملکرد بنتونیت در صنعت برق.",
+  alternates: {
+    canonical:
+      "https://www.barghemehrab.net/articles/cec-moisture-specs-and-standards",
+  },
+};
 export default function CecMoistureSpecsArticlePage() {
   // استایل مشترک دکمه بازگشت
   const backButtonClass =

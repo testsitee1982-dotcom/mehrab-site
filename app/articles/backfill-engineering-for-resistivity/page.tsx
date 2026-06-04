@@ -1,8 +1,17 @@
 // app/articles/backfill-engineering-for-resistivity/page.tsx
-"use client";
-
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "مهندسی بک‌فیل: رسیدن به مقاومت ویژه پایین با بنتونیت",
+  description:
+    "راهنمای مهندسی طراحی بک‌فیل بنتونیتی برای سیستم‌های ارتینگ، کاهش مقاومت زمین و افزایش پایداری بلندمدت.",
+  alternates: {
+    canonical:
+      "https://www.barghemehrab.net/articles/backfill-engineering-for-resistivity",
+  },
+};
 
 export default function BackfillEngineeringArticlePage() {
   // یک کلاس مشترک برای استایل دکمه برگشت

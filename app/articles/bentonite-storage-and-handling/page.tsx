@@ -1,8 +1,17 @@
 // app/articles/bentonite-storage-and-handling/page.tsx
-"use client";
-
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "نکات انبارداری و نگهداری بنتونیت صنعتی",
+  description:
+    "راهنمای اصول انبارداری، بسته‌بندی، کنترل رطوبت و نگهداری بنتونیت صنعتی برای حفظ کیفیت در پروژه‌های برق.",
+  alternates: {
+    canonical:
+      "https://www.barghemehrab.net/articles/bentonite-storage-and-handling",
+  },
+};
 
 export default function BentoniteStorageHandlingArticlePage() {
   // استایل مشترک دکمه «بازگشت به مقالات»

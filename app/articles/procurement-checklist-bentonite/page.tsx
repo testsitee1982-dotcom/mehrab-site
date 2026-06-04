@@ -1,8 +1,17 @@
 // app/articles/procurement-checklist-bentonite/page.tsx
-"use client";
-
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "چک‌لیست خرید بنتونیت برای پروژه‌های برق",
+  description:
+    "راهنمای انتخاب و خرید بنتونیت صنعتی شامل کنترل کیفیت، گواهی‌های فنی، بسته‌بندی، حمل و شرایط نگهداری.",
+  alternates: {
+    canonical:
+      "https://www.barghemehrab.net/articles/procurement-checklist-bentonite",
+  },
+};
 
 export default function ProcurementChecklistBentoniteArticlePage() {
   // استایل مشترک دکمه بازگشت

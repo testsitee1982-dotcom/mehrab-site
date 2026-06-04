@@ -7,12 +7,12 @@ export type Article = {
   date: string;
   img: string;
   readingTime: number;
-  tags: string[];
+  tags: readonly string[];
   excerpt: string;
   html: string;
 };
 
-export const articles: Article[] = [
+export const articles = [
   {
     id: "a-grounding-optimization",
     slug: "bentonite-for-substation-grounding",
@@ -25,7 +25,6 @@ export const articles: Article[] = [
       "راهنمای عملی انتخاب و به‌کارگیری بنتونیت برای کاهش مقاومت زمین، پایداری بلندمدت و انطباق با استانداردهای IEC/IEEE در پست‌های انتقال و توزیع.",
     html: `...`,
   },
-
   {
     id: "a-transformer-oil",
     slug: "bentonite-for-transformer-oil-polishing",
@@ -38,7 +37,6 @@ export const articles: Article[] = [
       "راهنمای گام‌به‌گام انتخاب بنتونیت گرانولی برای کاهش اسیدیته، رطوبت و بهبود استقامت دی‌الکتریک روغن‌های الکتریکی.",
     html: `...`,
   },
-
   {
     id: "a-backfill",
     slug: "backfill-engineering-for-resistivity",
@@ -51,7 +49,6 @@ export const articles: Article[] = [
       "فرمولاسیون مخلوط‌های بک‌فیل بنتونیتی برای کابل‌ترنچ و میله‌ی ارت؛ مقایسه‌ی عملکرد با کربن و سیمان.",
     html: `...`,
   },
-
   {
     id: "a-specs-and-standards",
     slug: "cec-moisture-specs-and-standards",
@@ -64,7 +61,6 @@ export const articles: Article[] = [
       "معنای عملی مقادیر CEC، رطوبت مجاز و توزیع اندازه‌ذره در بنتونیت‌های صنعتی و تاثیر آن‌ها بر عملکرد.",
     html: `...`,
   },
-
   {
     id: "a-procurement",
     slug: "procurement-checklist-bentonite",
@@ -77,7 +73,6 @@ export const articles: Article[] = [
       "چک‌لیست فنی و لجستیکی: از گواهی‌ها و آزمون‌ها تا بسته‌بندی، ردیابی و شرایط نگهداری بنتونیت.",
     html: `...`,
   },
-
   {
     id: "a-bentonite-storage",
     slug: "bentonite-storage-and-handling",
@@ -90,8 +85,14 @@ export const articles: Article[] = [
       "راهنمای انبارداری بنتونیت برای جلوگیری از جذب رطوبت، کاهش کیکینگ و حفظ کیفیت در پروژه‌های صنعتی.",
     html: `...`,
   },
-];
+] satisfies readonly Article[];
 
-export function getArticle(slug: string) {
-  return articles.find((a) => a.slug === slug) || null;
+export type ArticleSlug = (typeof articles)[number]["slug"];
+
+export function getArticle(slug: string): Article | null {
+  return articles.find((article) => article.slug === slug) ?? null;
+}
+
+export function getArticleBySlug(slug: ArticleSlug): Article | null {
+  return articles.find((article) => article.slug === slug) ?? null;
 }

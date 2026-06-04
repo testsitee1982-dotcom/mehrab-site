@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 
 type Stats = {
   online: number;
@@ -54,36 +55,13 @@ function useLocalVisitStats(): Stats {
   });
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const DAILY_PREFIX = "bp_daily_"; // bp_daily_YYYY-MM-DD => count
+    const DAILY_PREFIX = "bp_daily_";
     const TOTAL_KEY = "bp_total_visits";
-
     const ONLINE_KEY = "bp_online_tabs";
-    const TTL_MS = 25_000;
+    const SESSION_VISIT_KEY = "bp_session_visit_counted";
+    const TTL_MS = 30_000;
 
-    // Auto fake controls
-    const AUTO_LAST_KEY = "bp_auto_last_bump";
-    const GHOST_UNTIL_KEY = "bp_ghost_online_until";
-    const GHOST_PENDING_KEY = "bp_ghost_pending_to_add_visit"; // stores until timestamp (string)
-
-    const bumpVisit = (n = 1) => {
-      const t = new Date();
-      const tk = dateKey(t);
-      const todayKeyLS = `${DAILY_PREFIX}${tk}`;
-
-      const todayCur = Number(localStorage.getItem(todayKeyLS) ?? "0");
-      localStorage.setItem(todayKeyLS, String(todayCur + n));
-
-      const totalCur = Number(localStorage.getItem(TOTAL_KEY) ?? "0");
-      localStorage.setItem(TOTAL_KEY, String(totalCur + n));
-    };
-
-    // 1) Each page load => +1 visit
-    bumpVisit(1);
-
-    // Online tabs estimator (same browser)
-    const TAB_ID = `tab_${Math.random().toString(16).slice(2)}_${Date.now()}`;
+    const tabId = `tab_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
     const readOnline = (): Record<string, number> => {
       try {
@@ -97,134 +75,98 @@ function useLocalVisitStats(): Stats {
       localStorage.setItem(ONLINE_KEY, JSON.stringify(obj));
     };
 
-    const computeAndSetStats = () => {
-      const now = new Date();
+    const bumpVisitOncePerTab = () => {
+      if (sessionStorage.getItem(SESSION_VISIT_KEY) === "1") return;
 
-      const todayKeyLS = `${DAILY_PREFIX}${dateKey(now)}`;
-      const ydayKeyLS = `${DAILY_PREFIX}${dateKey(addDays(now, -1))}`;
+      const todayKey = `${DAILY_PREFIX}${dateKey(new Date())}`;
 
-      const todayVal = Number(localStorage.getItem(todayKeyLS) ?? "0");
-      const ydayVal = Number(localStorage.getItem(ydayKeyLS) ?? "0");
+      const todayValue = Number(localStorage.getItem(todayKey) ?? "0");
+      const totalValue = Number(localStorage.getItem(TOTAL_KEY) ?? "0");
 
-      // week sum
-      let weekSum = 0;
-      for (let i = 0; i < 7; i++) {
-        const k = `${DAILY_PREFIX}${dateKey(addDays(now, -i))}`;
-        weekSum += Number(localStorage.getItem(k) ?? "0");
-      }
-
-      // month/year sum by scanning keys
-      const mKey = monthKey(now);
-      const yKey = yearKey(now);
-      let monthSum = 0;
-      let yearSum = 0;
-
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (!k || !k.startsWith(DAILY_PREFIX)) continue;
-        const day = k.slice(DAILY_PREFIX.length); // YYYY-MM-DD
-        const v = Number(localStorage.getItem(k) ?? "0");
-        if (day.startsWith(mKey)) monthSum += v;
-        if (day.startsWith(yKey)) yearSum += v;
-      }
-
-      const totalVal = Number(localStorage.getItem(TOTAL_KEY) ?? "0");
-
-      // online (tabs) + ghost
-      const onlineObj = readOnline();
-      const tms = Date.now();
-
-      // cleanup old tabs
-      for (const id of Object.keys(onlineObj)) {
-        if (tms - onlineObj[id] > TTL_MS) delete onlineObj[id];
-      }
-      writeOnline(onlineObj);
-
-      const tabsOnline = Math.max(1, Object.keys(onlineObj).length);
-
-      const ghostUntil = Number(localStorage.getItem(GHOST_UNTIL_KEY) ?? "0");
-      const ghostActive = tms < ghostUntil ? 1 : 0;
-
-      setStats({
-        online: tabsOnline + ghostActive,
-        today: todayVal,
-        yesterday: ydayVal,
-        week: weekSum,
-        month: monthSum,
-        year: yearSum,
-        total: totalVal,
-      });
+      localStorage.setItem(todayKey, String(todayValue + 1));
+      localStorage.setItem(TOTAL_KEY, String(totalValue + 1));
+      sessionStorage.setItem(SESSION_VISIT_KEY, "1");
     };
 
-    const heartbeat = () => {
-      const obj = readOnline();
-      const t = Date.now();
-      obj[TAB_ID] = t;
+    const calculateStats = () => {
+      const now = new Date();
 
-      // cleanup old
-      for (const id of Object.keys(obj)) {
-        if (t - obj[id] > TTL_MS) delete obj[id];
+      const todayValue = Number(
+        localStorage.getItem(`${DAILY_PREFIX}${dateKey(now)}`) ?? "0"
+      );
+
+      const yesterdayValue = Number(
+        localStorage.getItem(`${DAILY_PREFIX}${dateKey(addDays(now, -1))}`) ?? "0"
+      );
+
+      let weekValue = 0;
+      for (let i = 0; i < 7; i++) {
+        weekValue += Number(
+          localStorage.getItem(`${DAILY_PREFIX}${dateKey(addDays(now, -i))}`) ??
+            "0"
+        );
       }
-      writeOnline(obj);
 
-      // if ghost finished and pending -> after 5 seconds add a visit
-      const pending = localStorage.getItem(GHOST_PENDING_KEY);
-      if (pending) {
-        const until = Number(pending);
-        if (Date.now() > until + 5_000) {
-          localStorage.removeItem(GHOST_PENDING_KEY);
-          bumpVisit(1);
+      const currentMonth = monthKey(now);
+      const currentYear = yearKey(now);
+
+      let monthValue = 0;
+      let yearValue = 0;
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith(DAILY_PREFIX)) continue;
+
+        const day = key.slice(DAILY_PREFIX.length);
+        const value = Number(localStorage.getItem(key) ?? "0");
+
+        if (day.startsWith(currentMonth)) monthValue += value;
+        if (day.startsWith(currentYear)) yearValue += value;
+      }
+
+      const totalValue = Number(localStorage.getItem(TOTAL_KEY) ?? "0");
+
+      const onlineObj = readOnline();
+      const nowMs = Date.now();
+
+      for (const id of Object.keys(onlineObj)) {
+        if (nowMs - onlineObj[id] > TTL_MS) {
+          delete onlineObj[id];
         }
       }
 
-      computeAndSetStats();
+      onlineObj[tabId] = nowMs;
+      writeOnline(onlineObj);
+
+      setStats({
+        online: Math.max(1, Object.keys(onlineObj).length),
+        today: todayValue,
+        yesterday: yesterdayValue,
+        week: weekValue,
+        month: monthValue,
+        year: yearValue,
+        total: totalValue,
+      });
     };
 
-    heartbeat();
-    const intv = window.setInterval(heartbeat, 8_000);
+    bumpVisitOncePerTab();
+    calculateStats();
 
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === ONLINE_KEY || e.key === GHOST_UNTIL_KEY || e.key === TOTAL_KEY) {
-        heartbeat();
-      }
+    const interval = window.setInterval(calculateStats, 10_000);
+
+    const onStorage = () => {
+      calculateStats();
     };
+
     window.addEventListener("storage", onStorage);
 
-    // AUTO: every 8 minutes => +1 visit, plus ghost online 2 minutes
-    const maybeAuto = () => {
-      const nowMs = Date.now();
-      const last = Number(localStorage.getItem(AUTO_LAST_KEY) ?? "0");
-      const EIGHT_MIN = 8 * 60 * 1000;
-      const TWO_MIN = 2 * 60 * 1000;
-
-      if (nowMs - last < EIGHT_MIN) return;
-
-      localStorage.setItem(AUTO_LAST_KEY, String(nowMs));
-
-      // start ghost online for 2 minutes
-      const ghostUntil = nowMs + TWO_MIN;
-      localStorage.setItem(GHOST_UNTIL_KEY, String(ghostUntil));
-
-      // after ghost ends + 5s -> add one visit (pending)
-      localStorage.setItem(GHOST_PENDING_KEY, String(ghostUntil));
-
-      // also add 1 visit immediately every 8 minutes
-      bumpVisit(1);
-
-      heartbeat();
-    };
-
-    const autoIntv = window.setInterval(maybeAuto, 10_000);
-    maybeAuto();
-
     return () => {
-      window.clearInterval(intv);
-      window.clearInterval(autoIntv);
+      window.clearInterval(interval);
       window.removeEventListener("storage", onStorage);
 
-      const obj = readOnline();
-      delete obj[TAB_ID];
-      writeOnline(obj);
+      const onlineObj = readOnline();
+      delete onlineObj[tabId];
+      writeOnline(onlineObj);
     };
   }, []);
 
@@ -406,13 +348,13 @@ export function SiteFooter() {
           {/* 5) برند + لوگو/اینماد  (لوگو سمت راست، متن دوخط، مثل هدر) */}
           <div className="order-1 lg:order-5">
             <div className="flex items-center justify-end gap-3 flex-row-reverse">
-              <img
-                src="/images/logo/mehrab.png"
-                alt="رعد و برق مهراب"
-                className="h-12 w-12 rounded-xl border border-white/10 bg-white/5 p-1 object-contain"
-                loading="lazy"
-              />
-
+<Image
+  src="/images/logo/mehrab.png"
+  alt="رعد و برق مهراب"
+  width={48}
+  height={48}
+  className="h-12 w-12 rounded-xl border border-white/10 bg-white/5 p-1 object-contain"
+/>
               <div className="text-right leading-tight">
                 <div className="text-white font-black text-[18px] whitespace-nowrap">
                   رعد و برق مهراب

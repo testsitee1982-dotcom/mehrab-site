@@ -1,10 +1,21 @@
 // app/articles/bentonite-for-substation-grounding/page.tsx
-"use client";
 
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
+export const metadata: Metadata = {
+  title: "چگونه بنتونیت کیفیت ارتینگ پست‌های برق را متحول می‌کند",
+  description:
+    "راهنمای عملی انتخاب و به‌کارگیری بنتونیت برای کاهش مقاومت زمین، پایداری بلندمدت و انطباق با استانداردهای IEC و IEEE در پست‌های انتقال و توزیع.",
+  alternates: {
+    canonical:
+      "https://www.barghemehrab.net/articles/bentonite-for-substation-grounding",
+  },
+};
+
 export default function BentoniteGroundingArticlePage() {
+ 
   // استایل مشترک دکمه بازگشت (مثل مقاله قبلی)
   const backButtonClass =
     "inline-flex items-center px-5 py-2 rounded-xl text-sm " +

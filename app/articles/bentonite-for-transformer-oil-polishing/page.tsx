@@ -1,5 +1,15 @@
 // app/articles/bentonite-for-transformer-oil-polishing/page.tsx
-"use client";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "انتخاب بنتونیت مناسب برای تصفیه و پالایش روغن ترانسفورماتور",
+  description:
+    "راهنمای انتخاب بنتونیت مناسب برای تصفیه روغن ترانسفورماتور، کاهش رطوبت، اسیدیته و بهبود خواص دی‌الکتریک روغن.",
+  alternates: {
+    canonical:
+      "https://www.barghemehrab.net/articles/bentonite-for-transformer-oil-polishing",
+  },
+};
 
 import Image from "next/image";
 import Link from "next/link";
