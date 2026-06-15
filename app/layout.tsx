@@ -8,11 +8,31 @@ import { SiteFooter } from "./ui/SiteFooter";
 
 const SITE_URL = "https://www.barghemehrab.net";
 
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "رعد و برق مهراب",
+  alternateName: "Mehrab",
+  url: SITE_URL,
+  logo: `${SITE_URL}/images/logo/mehrab.png`,
+  description:
+    "تولید کننده بنتونیت اکتیو، بنتونیت مخصوص ارتینگ، مواد کاهنده مقاومت زمین و محصولات تخصصی صنعت برق.",
+  contactPoint: [
+    {
+      "@type": "ContactPoint",
+      telephone: "+982133963108",
+      contactType: "sales",
+      areaServed: "IR",
+      availableLanguage: ["fa", "en"],
+    },
+  ],
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
 
   title: {
-    default: "رعد و برق مهراب | بنتونیت و مواد کاهنده مقاومت زمین",
+    default: "رعد و برق مهراب | بنتونیت ارتینگ و مواد کاهنده مقاومت زمین",
     template: "%s | رعد و برق مهراب",
   },
 
@@ -20,24 +40,22 @@ export const metadata: Metadata = {
     "تولید کننده بنتونیت اکتیو، بنتونیت مخصوص ارتینگ، مواد کاهنده مقاومت زمین، ژل کاهنده مقاومت و محصولات تخصصی صنعت برق.",
 
   keywords: [
-    "بنتونیت",
     "بنتونیت ارتینگ",
+    "خرید بنتونیت ارتینگ",
+    "قیمت بنتونیت ارتینگ",
     "مواد کاهنده مقاومت زمین",
-    "ژل کاهنده مقاومت",
+    "قیمت مواد کاهنده مقاومت زمین",
+    "ژل کاهنده مقاومت زمین",
     "چاه ارت",
-    "ارتینگ",
-    "سیستم ارت",
-    "رعد و برق مهراب",
-    "GRM",
+    "سیستم ارتینگ",
+    "خاک کاهنده مقاومت زمین",
+    "بنتونیت اکتیو",
     "LRM",
+    "GRM",
+    "رعد و برق مهراب",
   ],
 
-  authors: [
-    {
-      name: "Mehrab",
-    },
-  ],
-
+  authors: [{ name: "Mehrab" }],
   creator: "Mehrab",
   publisher: "Mehrab",
 
@@ -50,9 +68,9 @@ export const metadata: Metadata = {
     locale: "fa_IR",
     url: SITE_URL,
     siteName: "رعد و برق مهراب",
-    title: "رعد و برق مهراب",
+    title: "رعد و برق مهراب | بنتونیت ارتینگ و مواد کاهنده مقاومت زمین",
     description:
-      "تولید کننده بنتونیت اکتیو و محصولات تخصصی صنعت برق و ارتینگ",
+      "تولید کننده بنتونیت اکتیو، بنتونیت مخصوص ارتینگ و محصولات تخصصی صنعت برق.",
     images: [
       {
         url: "/images/og-image.jpg",
@@ -65,9 +83,9 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "رعد و برق مهراب",
+    title: "رعد و برق مهراب | بنتونیت ارتینگ",
     description:
-      "تولید کننده بنتونیت اکتیو و محصولات تخصصی صنعت برق و ارتینگ",
+      "تولید کننده بنتونیت اکتیو و مواد کاهنده مقاومت زمین برای پروژه‌های برق و ارتینگ.",
     images: ["/images/og-image.jpg"],
   },
 
@@ -99,11 +117,15 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl">
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c"),
+          }}
+        />
         <GlobalBackground />
         <SiteHeader />
-
         {children}
-
         <ContactSection />
         <SiteFooter />
       </body>

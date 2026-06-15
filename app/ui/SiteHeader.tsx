@@ -16,7 +16,8 @@ import {
   Icon,
   Motion,
   flags,
-} from "@/app/page";
+} from "@/app/ui/site-shared";
+
 import { articles } from "@/app/lib/articles";
 
 type MegaKey = "products" | "applications" | "articles" | null;
@@ -375,6 +376,24 @@ export function Header({
               />
             </button>
 
+{/* ویدیو */}
+<Link
+  href="/videos"
+  className="inline-flex items-center px-2.5 py-1.5 lg:px-3 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs lg:text-sm shadow"
+  onClick={closeAllOverlays}
+>
+  ویدیو
+</Link>
+
+{/* تصاویر */}
+<Link
+  href="/images"
+  className="inline-flex items-center px-2.5 py-1.5 lg:px-3 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs lg:text-sm shadow"
+  onClick={closeAllOverlays}
+>
+  تصاویر
+</Link>
+
             {/* شرکت و تماس */}
             <a
               href="#about"
@@ -513,6 +532,7 @@ export function Header({
                 >
                   {dict.nav.products}
                 </a>
+
                 <a
                   className="px-2 py-2 hover:bg-white/10 rounded-lg"
                   href="#applications"
@@ -520,6 +540,7 @@ export function Header({
                 >
                   {dict.nav.solutions}
                 </a>
+
                 <a
                   className="px-2 py-2 hover:bg-white/10 rounded-lg"
                   href="#blog"
@@ -527,6 +548,23 @@ export function Header({
                 >
                   {dict.nav.resources}
                 </a>
+
+                <Link
+                  className="px-2 py-2 hover:bg-white/10 rounded-lg"
+                  href="/videos"
+                  onClick={closeAllOverlays}
+                >
+                  ویدیو
+                </Link>
+
+                <Link
+                  className="px-2 py-2 hover:bg-white/10 rounded-lg"
+                  href="/images"
+                  onClick={closeAllOverlays}
+                >
+                  تصاویر
+                </Link>
+
                 <a
                   className="px-2 py-2 hover:bg-white/10 rounded-lg"
                   href="#about"
@@ -534,6 +572,7 @@ export function Header({
                 >
                   {dict.nav.company}
                 </a>
+
                 <a
                   className="px-2 py-2 hover:bg-white/10 rounded-lg"
                   href="#contact"

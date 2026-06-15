@@ -7,7 +7,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { articles } from "./lib/articles";
 import { products } from "./lib/products";
-import { SiteFooter } from "./ui/SiteFooter";
 
 // فونت‌ها
 const btitr = localFont({
@@ -1770,20 +1769,6 @@ function FinalCTA({ lang }: { lang: LanguageCode }) {
   );
 }
 
-// ===== چیزهایی که هدر و صفحات فرعی لازم دارند =====
-export {
-  dictionaries,
-  languageMeta,
-  useRTL,
-  products,
-  searchData,
-  btitr,
-  bmitra,
-  bnazanin,
-  Icon,
-  Motion,
-  flags,
-};
 
 type SelfTestResult = {
   name: string;
