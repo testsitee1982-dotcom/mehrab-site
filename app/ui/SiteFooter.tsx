@@ -30,10 +30,7 @@ function useServerVisitStats(): Stats {
 
     async function loadStats() {
       try {
-        const res = await fetch("/api/stats", {
-          cache: "no-store",
-        });
-
+        const res = await fetch("/api/stats", { cache: "no-store" });
         if (!res.ok) return;
 
         const data = (await res.json()) as Stats;
@@ -55,7 +52,6 @@ function useServerVisitStats(): Stats {
     }
 
     loadStats();
-
     const timer = window.setInterval(loadStats, 30000);
 
     return () => {
@@ -126,9 +122,12 @@ export function SiteFooter() {
           dir="rtl"
           className="grid gap-6 lg:grid-cols-[1.1fr_.85fr_.95fr_.8fr_1.1fr] items-start"
         >
+          {/* خبرنامه */}
           <div className="order-5 lg:order-1">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <div className="text-white font-extrabold text-[15px]">خبرنامه</div>
+              <div className="text-white font-extrabold text-[15px]">
+                خبرنامه
+              </div>
 
               <div className="mt-2 text-[12.5px] text-white/70 leading-relaxed">
                 جهت اطلاع از تخفیفات و کالاهای جدید در خبرنامه عضو شوید
@@ -169,6 +168,7 @@ export function SiteFooter() {
             </div>
           </div>
 
+          {/* شماره تماس */}
           <div className="order-4 lg:order-2">
             <div className="text-white font-extrabold text-[15px] inline-block">
               شماره تماس شرکت
@@ -189,6 +189,7 @@ export function SiteFooter() {
             </div>
           </div>
 
+          {/* آمار بازدید */}
           <div className="order-3 lg:order-3">
             <div className="text-white font-extrabold text-[15px] inline-block">
               آمار بازدید
@@ -211,10 +212,11 @@ export function SiteFooter() {
             </div>
           </div>
 
+          {/* لینک‌های سریع */}
           <div className="order-2 lg:order-4">
             <div className="text-white font-extrabold text-[15px] inline-block">
               لینک‌های سریع
-              <div className="mt-1 h-[2px] w-24 bg-[var(--brand-accent)]" />
+              <div className="mt-1 h-[2px] w-20 bg-[var(--brand-accent)]" />
             </div>
 
             <ul className="mt-3 grid gap-2 text-[13px] text-white/70">
@@ -237,6 +239,18 @@ export function SiteFooter() {
               </li>
 
               <li>
+                <a className="hover:text-white transition" href="/videos">
+                  ویدیوها
+                </a>
+              </li>
+
+              <li>
+                <a className="hover:text-white transition" href="/images">
+                  تصاویر
+                </a>
+              </li>
+
+              <li>
                 <a className="hover:text-white transition" href="#about">
                   شرکت
                 </a>
@@ -250,6 +264,7 @@ export function SiteFooter() {
             </ul>
           </div>
 
+          {/* لوگو و اینماد */}
           <div className="order-1 lg:order-5">
             <div className="flex items-center justify-end gap-3 flex-row-reverse">
               <Image
