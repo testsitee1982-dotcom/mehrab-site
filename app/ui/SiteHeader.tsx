@@ -15,48 +15,67 @@ import {
   bnazanin,
   Icon,
   Motion,
-  flags,
 } from "@/app/ui/site-shared";
 
 import { articles } from "@/app/lib/articles";
 
 type MegaKey = "products" | "applications" | "articles" | null;
 
-// این کامپوننت در همه‌ی صفحات استفاده می‌شود
+type LanguageCode = keyof typeof languageMeta;
+
+const flagImages: Record<LanguageCode, string> = {
+  fa: "/images/flags/iran.webp",
+  en: "/images/flags/uk.webp",
+  ru: "/images/flags/russia.webp",
+  es: "/images/flags/spain.webp",
+  fr: "/images/flags/france.webp",
+  de: "/images/flags/germany.webp",
+  tr: "/images/flags/turkey.webp",
+  ar: "/images/flags/saudi.webp",
+  zh: "/images/flags/china.webp",
+  ja: "/images/flags/japan.webp",
+  ko: "/images/flags/korea.webp",
+};
+
+const quickLinks = [
+  { label: "محصولات", href: "#products", type: "hash" },
+  { label: "کاربردها", href: "#applications", type: "hash" },
+  { label: "مقالات", href: "#blog", type: "hash" },
+  { label: "ویدیو", href: "/videos", type: "route" },
+  { label: "تصاویر", href: "/images", type: "route" },
+  { label: "تاییدیه ها", href: "/approvals", type: "route" },
+  { label: "شرکت", href: "#about", type: "hash" },
+  { label: "تماس", href: "#contact", type: "hash" },
+] as const;
+
 export function SiteHeader() {
-  const [lang, setLang] = useState<keyof typeof languageMeta>("fa");
+  const [lang, setLang] = useState<LanguageCode>("fa");
   return <Header lang={lang} setLang={setLang} />;
 }
 
-/* ===================== Header & Navigation ===================== */
 export function Header({
   lang,
   setLang,
 }: {
-  lang: keyof typeof languageMeta;
-  setLang: (l: keyof typeof languageMeta) => void;
+  lang: LanguageCode;
+  setLang: (l: LanguageCode) => void;
 }) {
   const dict = dictionaries[lang];
   const isRTL = useRTL(lang);
 
   const [menuOpen, setMenuOpen] = useState(false);
-
-  // سرچ
   const [query, setQuery] = useState("");
+  const [langOpen, setLangOpen] = useState(false);
+  const [openMega, setOpenMega] = useState<MegaKey>(null);
+
+  const headerRef = useRef<HTMLDivElement>(null);
+
   const results = useMemo(() => {
     if (!query.trim()) return [] as typeof searchData;
     return searchData
       .filter((x) => x.label.toLowerCase().includes(query.toLowerCase()))
       .slice(0, 7);
   }, [query]);
-
-  // --- منوی زبان کنترل‌شده ---
-  const [langOpen, setLangOpen] = useState(false);
-  const langMenuRef = useRef<HTMLDetailsElement>(null);
-
-  // --- ✅ مگا‌منوهای کنترل‌شده (فقط یکی باز باشد) ---
-  const [openMega, setOpenMega] = useState<MegaKey>(null);
-  const megaWrapRef = useRef<HTMLDivElement>(null);
 
   const closeAllOverlays = () => {
     setOpenMega(null);
@@ -66,134 +85,272 @@ export function Header({
 
   const toggleMega = (key: Exclude<MegaKey, null>) => {
     setOpenMega((prev) => (prev === key ? null : key));
-    // وقتی مگا باز میشه، موبایل منو بسته باشه
     setMenuOpen(false);
+    setLangOpen(false);
   };
 
-  // بستن با کلیک بیرون + ESC
+  const openCart = () => {
+    window.dispatchEvent(new Event("open-cart-sidebar"));
+    closeAllOverlays();
+  };
+
   useEffect(() => {
-    const onDown = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (!megaWrapRef.current) return;
-
-      // اگر کلیک داخل خود مگا/دکمه‌ها بود، هیچ
-      if (megaWrapRef.current.contains(t)) return;
-
-      // اگر روی منوی زبان کلیک شد، مگاها رو ببندیم
-      if (langMenuRef.current && langMenuRef.current.contains(t)) {
-        setOpenMega(null);
-        return;
-      }
-
-      // بیرون همه چیز
-      setOpenMega(null);
-      setMenuOpen(false);
-      // زبان رو هم اگر باز بود ببند
-      setLangOpen(false);
+    const onDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (headerRef.current?.contains(target)) return;
+      closeAllOverlays();
     };
 
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setOpenMega(null);
-        setMenuOpen(false);
-        setLangOpen(false);
-      }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeAllOverlays();
     };
 
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
+
     return () => {
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("keydown", onKey);
     };
   }, []);
 
+  const renderFlag = (code: LanguageCode, className = "h-5 w-7") => (
+    <img
+      src={flagImages[code]}
+      alt={languageMeta[code].label}
+      className={`${className} rounded-sm object-cover shadow-sm`}
+      loading="eager"
+      decoding="async"
+    />
+  );
+
+  const renderLanguageMenu = (mode: "desktop" | "mobile") => (
+    <div className="relative shrink-0" dir="ltr">
+      <button
+        type="button"
+        className={
+          mode === "mobile"
+            ? "inline-flex h-10 items-center gap-1.5 rounded-xl bg-[#10B981] px-3 text-white shadow-md"
+            : "inline-flex h-10 md:h-11 items-center gap-2 rounded-xl bg-[#10B981] px-4 text-white shadow-md hover:bg-[#0EA371]"
+        }
+        onClick={() => {
+          setLangOpen((value) => !value);
+          setOpenMega(null);
+          setMenuOpen(false);
+        }}
+        aria-label="انتخاب زبان"
+      >
+        {renderFlag(lang)}
+
+        <span className="hidden sm:inline text-sm md:text-base font-semibold">
+          {languageMeta[lang].label}
+        </span>
+
+        <Icon
+          name="ChevronDown"
+          size={17}
+          className={langOpen ? "rotate-180 transition" : "transition"}
+        />
+      </button>
+
+      {langOpen && (
+        <div className="absolute left-0 mt-2 w-56 overflow-hidden rounded-xl border border-white/10 bg-[#0b1228] shadow-xl z-[80]">
+          {Object.keys(languageMeta).map((key) => {
+            const code = key as LanguageCode;
+
+            return (
+              <button
+                type="button"
+                key={code}
+                onClick={() => {
+                  setLang(code);
+                  setLangOpen(false);
+                }}
+                className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left hover:bg-white/5"
+                dir="ltr"
+              >
+                <span className="text-sm text-white/90">
+                  {languageMeta[code].label}
+                </span>
+
+                {renderFlag(code)}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderQuickLink = (
+    item: (typeof quickLinks)[number],
+    className: string
+  ) => {
+    if (item.type === "route") {
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          className={className}
+          onClick={closeAllOverlays}
+        >
+          {item.label}
+        </Link>
+      );
+    }
+
+    return (
+      <a
+        key={item.href}
+        href={item.href}
+        className={className}
+        onClick={closeAllOverlays}
+      >
+        {item.label}
+      </a>
+    );
+  };
+
   return (
     <header
-      className="sticky top-0 z-50 backdrop-blur-md border-b border-white/10"
+      className="sticky top-0 z-50 border-b border-white/10 backdrop-blur-md"
       style={{
         background:
-          "linear-gradient(90deg, rgba(3,7,18,.85), rgba(2,6,23,.7))",
+          "linear-gradient(90deg, rgba(3,7,18,.88), rgba(2,6,23,.76))",
       }}
     >
-      <div className="max-w-7xl mx-auto px-4 md:px-6" ref={megaWrapRef}>
-        {/* ✅ تغییر اصلی: h-16 -> h-14 */}
-        <div className="flex items-center justify-between h-14 gap-4">
-          <div className="flex items-center gap-3">
-            <button
-              className="md:hidden p-2 rounded-xl hover:bg-white/10"
-              onClick={() => {
-                setMenuOpen((v) => !v);
-                setOpenMega(null);
-                setLangOpen(false);
-              }}
-              aria-label="Toggle menu"
+      <div className="mx-auto max-w-7xl px-3 md:px-6" ref={headerRef}>
+        {/* Mobile top bar */}
+        <div className="flex h-14 items-center justify-between gap-2 md:hidden">
+          <button
+            type="button"
+            className="grid h-10 w-10 place-items-center rounded-xl text-white hover:bg-white/10"
+            onClick={() => {
+              setMenuOpen((value) => !value);
+              setOpenMega(null);
+              setLangOpen(false);
+            }}
+            aria-label="باز کردن منو"
+          >
+            {menuOpen ? (
+              <Icon name="X" size={23} />
+            ) : (
+              <Icon name="Menu" size={23} />
+            )}
+          </button>
+
+          <Link
+            href="#home"
+            className="flex min-w-0 flex-1 items-center justify-center gap-2"
+            onClick={closeAllOverlays}
+          >
+            <img
+              src="/images/logo/mehrab.png"
+              alt="رعد و برق مهراب"
+              className="h-10 w-auto shrink-0 rounded-lg shadow-lg"
+              loading="eager"
+            />
+
+            <div
+              className={`${isRTL ? btitr.className : ""} truncate text-[15px] font-extrabold leading-5 text-white`}
             >
-              {menuOpen ? <Icon name="X" size={22} /> : <Icon name="Menu" size={22} />}
+              رعد و برق مهراب
+            </div>
+          </Link>
+
+          <div className="flex items-center gap-1.5">
+            {renderLanguageMenu("mobile")}
+
+            <button
+              type="button"
+              onClick={openCart}
+              className="relative grid h-10 w-10 place-items-center rounded-xl text-white hover:bg-white/10"
+              aria-label="سبد خرید"
+            >
+              <Icon name="ShoppingCart" size={21} />
             </button>
-
-{/* برند */}
-<Link href="#home" className="flex items-center gap-3 min-w-0">
-  <img
-    src="/images/logo/mehrab.png"
-    alt="رعد و برق مهراب"
-    className="h-11 w-auto rounded-lg shadow-lg shrink-0"
-    loading="eager"
-  />
-
-  <div className="min-w-0">
-    {/* عنوان: یک خط، جمع‌وجور */}
-    <div
-      className={`${isRTL ? btitr.className : ""} text-white font-extrabold tracking-tight text-[15px] md:text-[17px] leading-5 md:leading-6 whitespace-nowrap`}
-    >
-      رعد و برق مهراب
-    </div>
-
-    {/* زیرعنوان: دسکتاپ نمایش، موبایل مخفی (مثل هدر حرفه‌ای) */}
-    <div
-      className={`${isRTL ? bmitra.className : ""} text-white/70 text-[11px] md:text-[12px] leading-4 hidden md:block truncate max-w-[260px]`}
-    >
-      {dictionaries[lang].tagline}
-    </div>
-  </div>
-</Link>
           </div>
+        </div>
 
-          {/* جستجو */}
-          <div className="relative hidden lg:block w-[36rem]">
-            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-2xl px-3 py-2">
+        {/* Mobile blue quick navigation */}
+        <nav
+          className={`${bnazanin.className} flex h-12 items-center gap-2 overflow-x-auto overflow-y-hidden whitespace-nowrap border-t border-white/5 text-white/90 scrollbar-hide md:hidden`}
+          aria-label="منوی سریع موبایل"
+        >
+          {quickLinks.map((item) =>
+            renderQuickLink(
+              item,
+              "inline-flex shrink-0 items-center rounded-xl bg-[#2563eb] px-3 py-1.5 text-xs text-white shadow hover:bg-[#1d4ed8]"
+            )
+          )}
+        </nav>
+
+        {/* Desktop top bar */}
+        <div className="hidden h-14 items-center justify-between gap-4 md:flex">
+          <Link
+            href="#home"
+            className="flex min-w-0 items-center gap-3"
+            onClick={closeAllOverlays}
+          >
+            <img
+              src="/images/logo/mehrab.png"
+              alt="رعد و برق مهراب"
+              className="h-11 w-auto shrink-0 rounded-lg shadow-lg"
+              loading="eager"
+            />
+
+            <div className="min-w-0">
+              <div
+                className={`${isRTL ? btitr.className : ""} whitespace-nowrap text-[17px] font-extrabold leading-6 tracking-tight text-white`}
+              >
+                رعد و برق مهراب
+              </div>
+
+              <div
+                className={`${isRTL ? bmitra.className : ""} hidden max-w-[260px] truncate text-[12px] leading-4 text-white/70 lg:block`}
+              >
+                {dict.tagline}
+              </div>
+            </div>
+          </Link>
+
+          <div className="relative hidden w-[36rem] lg:block">
+            <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
               <Icon name="Search" size={18} className="text-white/70" />
+
               <input
-                className="w-full bg-transparent outline-none text-sm text-white placeholder:text-white/50"
+                className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/50"
                 placeholder={dict.searchPlaceholder}
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(event) => setQuery(event.target.value)}
                 dir={isRTL ? "rtl" : "ltr"}
                 onFocus={() => {
-                  // وقتی سرچ فوکوس می‌گیرد، مگاها بسته شوند
                   setOpenMega(null);
                   setMenuOpen(false);
+                  setLangOpen(false);
                 }}
               />
             </div>
-
-            <Motion.AnimatePresence>
+                      <Motion.AnimatePresence>
               {results.length > 0 && (
                 <Motion.Ul
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
-                  className="absolute mt-2 w-full bg-[#0b1228] border border-white/10 rounded-xl overflow-hidden shadow-xl"
+                  className="absolute mt-2 w-full overflow-hidden rounded-xl border border-white/10 bg-[#0b1228] shadow-xl"
                   dir={isRTL ? "rtl" : "ltr"}
                 >
-                  {results.map((r) => (
+                  {results.map((result) => (
                     <li
-                      key={r.id}
-                      className="px-3 py-2 hover:bg-white/5 cursor-pointer flex items-center justify-between"
+                      key={result.id}
+                      className="flex cursor-pointer items-center justify-between px-3 py-2 hover:bg-white/5"
                     >
-                      <span className="text-sm text-white/90">{r.label}</span>
-                      <span className="text-[10px] text-white/50 uppercase tracking-wider">
-                        {r.type}
+                      <span className="text-sm text-white/90">
+                        {result.label}
+                      </span>
+
+                      <span className="text-[10px] uppercase tracking-wider text-white/50">
+                        {result.type}
                       </span>
                     </li>
                   ))}
@@ -202,99 +359,29 @@ export function Header({
             </Motion.AnimatePresence>
           </div>
 
-          {/* زبان + کاتالوگ + سبد */}
-          <div className="flex items-center gap-2 flex-nowrap">
-            {/* زبان */}
-            <div className="relative">
-              <details
-                className="group"
-                ref={langMenuRef}
-                open={langOpen}
-                onToggle={(e) => {
-                  const el = e.currentTarget as HTMLDetailsElement;
-                  if (el.open !== langOpen) setLangOpen(el.open);
-                }}
-              >
-                <summary
-                  className="list-none flex items-center gap-2 cursor-pointer select-none rounded-xl px-4 py-2 bg-[#10B981] hover:bg-[#0EA371] text-white shadow-md"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setLangOpen((v) => !v);
-                    setOpenMega(null);
-                    setMenuOpen(false);
-                  }}
-                >
-                  <span className="text-xl md:text-2xl leading-none emoji-flag">
-                    {flags[lang]}
-                  </span>
-                  <span className="text-sm md:text-base font-semibold">
-                    {languageMeta[lang].label}
-                  </span>
-                  <Icon
-                    name="ChevronDown"
-                    size={18}
-                    className={langOpen ? "rotate-180 transition" : "transition"}
-                  />
-                </summary>
+          <div className="flex shrink-0 items-center gap-2">
+            {renderLanguageMenu("desktop")}
 
-                <div className="absolute right-0 mt-2 w-56 bg-[#0b1228] border border-white/10 rounded-xl overflow-hidden shadow-xl">
-                  {Object.keys(languageMeta).map((k) => (
-                    <button
-                      type="button"
-                      key={k}
-                      onClick={() => {
-                        setLang(k as keyof typeof languageMeta);
-                        setLangOpen(false);
-                      }}
-                      className="w-full text-right px-3 py-2 hover:bg-white/5 flex items-center justify-between"
-                    >
-                      <span className="text-sm text-white/90">
-                        {languageMeta[k as keyof typeof languageMeta].label}
-                      </span>
-                      <span className="text-xl leading-none emoji-flag">
-                        {flags[k as keyof typeof flags]}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </details>
-            </div>
-
-            {/* کاتالوگ */}
             <a
               href="#catalog"
-              className="hidden md:inline-flex items-center justify-center gap-2
-                         bg-[var(--brand-accent)] text-slate-900 font-bold
-                         px-4 md:px-5 h-10 md:h-11 rounded-xl hover:brightness-95
-                         whitespace-nowrap shrink-0 leading-[1.1] min-w-[136px] shadow-md"
-              aria-label={dict?.nav?.catalog || (lang === "en" ? "Get Catalog" : "دریافت کاتالوگ")}
-              onClick={() => {
-                setOpenMega(null);
-                setMenuOpen(false);
-                setLangOpen(false);
-              }}
+              className="inline-flex h-11 min-w-[136px] shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--brand-accent)] px-5 font-bold leading-[1.1] text-slate-900 shadow-md hover:brightness-95"
+              aria-label={dict?.nav?.catalog || "دریافت کاتالوگ"}
+              onClick={closeAllOverlays}
             >
               <Icon name="Download" size={18} />
-              {dict?.nav?.catalog || (lang === "en" ? "Get Catalog" : "دریافت کاتالوگ")}
+              {dict?.nav?.catalog || "دریافت کاتالوگ"}
             </a>
 
-            {/* سبد */}
             <button
               type="button"
-              onClick={() => {
-                // ✅ اتصال به پنل سبد خرید
-                window.dispatchEvent(new Event("open-cart-sidebar"));
-                setOpenMega(null);
-                setMenuOpen(false);
-                setLangOpen(false);
-              }}
-              className="relative p-2 rounded-xl hover:bg-white/10 text-white"
-              aria-label="Open cart"
+              onClick={openCart}
+              className="relative rounded-xl p-2 text-white hover:bg-white/10"
+              aria-label="سبد خرید"
             >
               <Icon name="ShoppingCart" />
               <span
                 id="cart-count"
-                className="absolute -top-1 -right-1 text-[10px] bg-[var(--brand-primary)] text-white rounded-full px-1.5 min-w-[18px] h-[18px] flex items-center justify-center leading-none text-center hidden"
+                className="absolute -right-1 -top-1 hidden h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--brand-primary)] px-1.5 text-center text-[10px] leading-none text-white"
               >
                 0
               </span>
@@ -302,29 +389,29 @@ export function Header({
           </div>
         </div>
 
-        {/* ===== نوار منوی پایین هدر ===== */}
+        {/* Desktop bottom navigation */}
         <nav
           className={
             bnazanin.className +
-            " hidden md:flex w-full items-center h-12 text-white/90 justify-between rtl:flex-row-reverse"
+            " hidden h-12 w-full items-center justify-between text-white/90 md:flex rtl:flex-row-reverse"
           }
+          aria-label="منوی اصلی"
         >
-          {/* چپ: تماس و ایمیل */}
-          <div className="flex items-center gap-1.5 lg:gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 lg:gap-2">
             <a
               href="tel:+982133963108"
-              className="shrink-0 inline-flex items-center gap-2 px-2.5 py-1.5 lg:px-3 lg:py-1.5 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs lg:text-sm shadow"
-              aria-label="Call"
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[#2563eb] px-2.5 py-1.5 text-xs text-white shadow hover:bg-[#1d4ed8] lg:px-3 lg:text-sm"
+              aria-label="تماس تلفنی"
               onClick={() => setOpenMega(null)}
             >
               <Icon name="Phone" size={14} />
-              <span dir="ltr"> 021 -3396 3108</span>
+              <span dir="ltr">021 -3396 3108</span>
             </a>
 
             <a
               href="mailto:sales@bentonpower.com"
-              className="shrink-0 inline-flex items-center gap-2 px-2.5 py-1.5 lg:px-3 lg:py-1.5 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs lg:text-sm shadow"
-              aria-label="Email"
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[#2563eb] px-2.5 py-1.5 text-xs text-white shadow hover:bg-[#1d4ed8] lg:px-3 lg:text-sm"
+              aria-label="ایمیل"
               onClick={() => setOpenMega(null)}
             >
               <Icon name="Mail" size={14} />
@@ -332,85 +419,69 @@ export function Header({
             </a>
           </div>
 
-          {/* راست: دکمه‌های منو + مگاها */}
-          <div className="relative flex items-center gap-1.5 lg:gap-2">
-            {/* محصولات */}
+          <div className="relative flex shrink-0 items-center gap-1.5 lg:gap-2">
             <button
               type="button"
               onClick={() => toggleMega("products")}
-              className="inline-flex items-center gap-2 px-2.5 py-1.5 lg:px-3 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs lg:text-sm cursor-pointer select-none shadow"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#2563eb] px-2.5 py-1.5 text-xs text-white shadow hover:bg-[#1d4ed8] lg:px-3 lg:text-sm"
             >
               {dict.nav.products}
               <Icon
                 name="ChevronDown"
                 size={16}
-                className={openMega === "products" ? "rotate-180 transition" : "transition"}
+                className={
+                  openMega === "products"
+                    ? "rotate-180 transition"
+                    : "transition"
+                }
               />
             </button>
 
-            {/* کاربردها */}
             <button
               type="button"
               onClick={() => toggleMega("applications")}
-              className="inline-flex items-center gap-2 px-2.5 py-1.5 lg:px-3 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs lg:text-sm cursor-pointer select-none shadow"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#2563eb] px-2.5 py-1.5 text-xs text-white shadow hover:bg-[#1d4ed8] lg:px-3 lg:text-sm"
             >
               {dict.nav.solutions}
               <Icon
                 name="ChevronDown"
                 size={16}
-                className={openMega === "applications" ? "rotate-180 transition" : "transition"}
+                className={
+                  openMega === "applications"
+                    ? "rotate-180 transition"
+                    : "transition"
+                }
               />
             </button>
 
-            {/* مقالات */}
             <button
               type="button"
               onClick={() => toggleMega("articles")}
-              className="inline-flex items-center gap-2 px-2.5 py-1.5 lg:px-3 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs lg:text-sm cursor-pointer select-none shadow"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#2563eb] px-2.5 py-1.5 text-xs text-white shadow hover:bg-[#1d4ed8] lg:px-3 lg:text-sm"
             >
               {dict.nav.resources}
               <Icon
                 name="ChevronDown"
                 size={16}
-                className={openMega === "articles" ? "rotate-180 transition" : "transition"}
+                className={
+                  openMega === "articles"
+                    ? "rotate-180 transition"
+                    : "transition"
+                }
               />
             </button>
 
-{/* ویدیو */}
-<Link
-  href="/videos"
-  className="inline-flex items-center px-2.5 py-1.5 lg:px-3 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs lg:text-sm shadow"
-  onClick={closeAllOverlays}
->
-  ویدیو
-</Link>
-
-{/* تصاویر */}
-<Link
-  href="/images"
-  className="inline-flex items-center px-2.5 py-1.5 lg:px-3 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs lg:text-sm shadow"
-  onClick={closeAllOverlays}
->
-  تصاویر
-</Link>
-
-            {/* شرکت و تماس */}
-            <a
-              href="#about"
-              className="inline-flex items-center px-2.5 py-1.5 lg:px-3 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs lg:text-sm shadow"
-              onClick={closeAllOverlays}
-            >
-              {dict.nav.company}
-            </a>
-            <a
-              href="#contact"
-              className="inline-flex items-center px-2.5 py-1.5 lg:px-3 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs lg:text-sm shadow"
-              onClick={closeAllOverlays}
-            >
-              {dict.nav.contact}
-            </a>
-
-            {/* ✅ پنجره مگا منوها (هیچوقت بیرون صفحه نمی‌زند) */}
+            {quickLinks
+              .filter(
+                (item) =>
+                  !["#products", "#applications", "#blog"].includes(item.href)
+              )
+              .map((item) =>
+                renderQuickLink(
+                  item,
+                  "inline-flex items-center rounded-xl bg-[#2563eb] px-2.5 py-1.5 text-xs text-white shadow hover:bg-[#1d4ed8] lg:px-3 lg:text-sm"
+                )
+              )}
             <Motion.AnimatePresence>
               {openMega && (
                 <Motion.Div
@@ -418,9 +489,8 @@ export function Header({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 6 }}
                   transition={{ duration: 0.18 }}
-                  className="absolute top-[54px] z-[60] rounded-2xl border border-white/10 shadow-2xl overflow-hidden"
+                  className="absolute top-[54px] z-[60] overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
                   style={{
-                    // ✅ برای RTL همیشه از راست بچسبد، بیرون نمی‌زند
                     right: 0,
                     left: "auto",
                     width: "min(960px, calc(100vw - 32px))",
@@ -428,32 +498,33 @@ export function Header({
                   }}
                   dir={isRTL ? "rtl" : "ltr"}
                 >
-                  {/* بدنه: اگر زیاد شد داخلش اسکرول */}
                   <div style={{ maxHeight: "70vh", overflow: "auto" }}>
                     {openMega === "products" && (
                       <div className="p-4">
                         <div className="grid grid-cols-3 gap-4">
-                          {products.slice(0, 6).map((p) => (
-                            <a
-                              key={p.id}
-                              href="#products"
+                          {products.slice(0, 6).map((product) => (
+                            <Link
+                              key={product.id}
+                              href={`/products/${product.id}`}
                               onClick={() => setOpenMega(null)}
-                              className="group p-3 rounded-xl border border-white/10 hover:bg-white/5"
+                              className="group rounded-xl border border-white/10 p-3 hover:bg-white/5"
                             >
                               <div className="h-20 rounded-lg bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,.15),rgba(255,255,255,.05)_60%)]" />
-                              <div className="mt-2 font-medium text-white/90 group-hover:text-white line-clamp-2">
-                                {p.name}
+
+                              <div className="mt-2 line-clamp-2 font-medium text-white/90 group-hover:text-white">
+                                {product.name}
                               </div>
-                              <div className="text-xs text-white/50 mt-1">
+
+                              <div className="mt-1 text-xs text-white/50">
                                 {dict.specs}
                               </div>
-                            </a>
+                            </Link>
                           ))}
 
                           <a
                             href="#products"
                             onClick={() => setOpenMega(null)}
-                            className="p-3 rounded-xl border border-dashed border-white/10 hover:bg-white/5 flex items-center justify-center text-white/70"
+                            className="flex items-center justify-center rounded-xl border border-dashed border-white/10 p-3 text-white/70 hover:bg-white/5"
                           >
                             {dict.featured.viewAll}
                           </a>
@@ -465,21 +536,38 @@ export function Header({
                       <div className="p-4">
                         <div className="grid grid-cols-4 gap-4">
                           {[
-                            { icon: "ShieldCheck", name: "Grounding Systems", href: "#applications" },
-                            { icon: "Truck", name: "Drilling & Backfill", href: "#applications" },
-                            { icon: "Factory", name: "Oil Purification", href: "#applications" },
-                            { icon: "Sparkles", name: "Sealing & Barrier", href: "#applications" },
-                          ].map((x, i) => (
+                            {
+                              icon: "ShieldCheck",
+                              name: "Grounding Systems",
+                              href: "#applications",
+                            },
+                            {
+                              icon: "Truck",
+                              name: "Drilling & Backfill",
+                              href: "#applications",
+                            },
+                            {
+                              icon: "Factory",
+                              name: "Oil Purification",
+                              href: "#applications",
+                            },
+                            {
+                              icon: "Sparkles",
+                              name: "Sealing & Barrier",
+                              href: "#applications",
+                            },
+                          ].map((item) => (
                             <a
-                              key={i}
-                              href={x.href}
+                              key={item.name}
+                              href={item.href}
                               onClick={() => setOpenMega(null)}
-                              className="p-3 rounded-xl border border-white/10 hover:bg-white/5 flex items-center gap-2"
+                              className="flex items-center gap-2 rounded-xl border border-white/10 p-3 hover:bg-white/5"
                             >
-                              <div className="p-2 rounded-lg bg-white/5">
-                                <Icon name={x.icon} />
+                              <div className="rounded-lg bg-white/5 p-2">
+                                <Icon name={item.icon} />
                               </div>
-                              <div className="text-white/90">{x.name}</div>
+
+                              <div className="text-white/90">{item.name}</div>
                             </a>
                           ))}
                         </div>
@@ -489,21 +577,23 @@ export function Header({
                     {openMega === "articles" && (
                       <div className="p-4">
                         <div className="grid grid-cols-3 gap-4">
-                          {articles.slice(0, 6).map((a) => (
-                            <a
-                              key={a.id ?? a.slug}
-                              href="#blog"
+                          {articles.slice(0, 6).map((article) => (
+                            <Link
+                              key={article.id ?? article.slug}
+                              href={`/articles/${article.slug}`}
                               onClick={() => setOpenMega(null)}
-                              className="rounded-2xl border border-white/10 hover:bg-white/5 p-3"
+                              className="rounded-2xl border border-white/10 p-3 hover:bg-white/5"
                             >
-                              <div className="h-16 bg-white/5 rounded-lg" />
-                              <div className="mt-2 text-white/90 font-medium line-clamp-2">
-                                {a.title}
+                              <div className="h-16 rounded-lg bg-white/5" />
+
+                              <div className="mt-2 line-clamp-2 font-medium text-white/90">
+                                {article.title}
                               </div>
+
                               <div className="text-xs text-white/50">
-                                {new Date(a.date).toDateString()}
+                                {new Date(article.date).toDateString()}
                               </div>
-                            </a>
+                            </Link>
                           ))}
                         </div>
                       </div>
@@ -515,71 +605,43 @@ export function Header({
           </div>
         </nav>
 
-        {/* منوی موبایل */}
+        {/* Mobile hamburger menu */}
         <Motion.AnimatePresence>
           {menuOpen && (
             <Motion.Nav
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className={bnazanin.className + " md:hidden overflow-hidden"}
+              className={
+                bnazanin.className +
+                " overflow-hidden border-t border-white/10 md:hidden"
+              }
             >
-              <div className="py-3 grid gap-2 text-white/90">
-                <a
-                  className="px-2 py-2 hover:bg-white/10 rounded-lg"
-                  href="#products"
-                  onClick={closeAllOverlays}
-                >
-                  {dict.nav.products}
-                </a>
+              <div className="grid gap-2 py-3 text-white/90">
+                {quickLinks.map((item) =>
+                  renderQuickLink(
+                    item,
+                    "rounded-lg px-3 py-2 text-right hover:bg-white/10"
+                  )
+                )}
 
-                <a
-                  className="px-2 py-2 hover:bg-white/10 rounded-lg"
-                  href="#applications"
-                  onClick={closeAllOverlays}
-                >
-                  {dict.nav.solutions}
-                </a>
+                <div className="mt-2 grid gap-2 border-t border-white/10 pt-3">
+                  <a
+                    className="rounded-lg px-3 py-2 text-right hover:bg-white/10"
+                    href="tel:+982133963108"
+                    onClick={closeAllOverlays}
+                  >
+                    تماس: <span dir="ltr">021 -3396 3108</span>
+                  </a>
 
-                <a
-                  className="px-2 py-2 hover:bg-white/10 rounded-lg"
-                  href="#blog"
-                  onClick={closeAllOverlays}
-                >
-                  {dict.nav.resources}
-                </a>
-
-                <Link
-                  className="px-2 py-2 hover:bg-white/10 rounded-lg"
-                  href="/videos"
-                  onClick={closeAllOverlays}
-                >
-                  ویدیو
-                </Link>
-
-                <Link
-                  className="px-2 py-2 hover:bg-white/10 rounded-lg"
-                  href="/images"
-                  onClick={closeAllOverlays}
-                >
-                  تصاویر
-                </Link>
-
-                <a
-                  className="px-2 py-2 hover:bg-white/10 rounded-lg"
-                  href="#about"
-                  onClick={closeAllOverlays}
-                >
-                  {dict.nav.company}
-                </a>
-
-                <a
-                  className="px-2 py-2 hover:bg-white/10 rounded-lg"
-                  href="#contact"
-                  onClick={closeAllOverlays}
-                >
-                  {dict.nav.contact}
-                </a>
+                  <a
+                    className="rounded-lg px-3 py-2 text-right hover:bg-white/10"
+                    href="mailto:sales@bentonpower.com"
+                    onClick={closeAllOverlays}
+                  >
+                    sales@bentonpower.com
+                  </a>
+                </div>
               </div>
             </Motion.Nav>
           )}

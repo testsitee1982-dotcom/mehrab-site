@@ -845,180 +845,210 @@ function FeaturedProducts({ lang }: { lang: LanguageCode }) {
         </a>
       </div>
 
-      {/* شبکه محصولات */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {products.map((product, index) => (
-          <Motion.Div
-            key={product.id}
-            initial={{ opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.25 }}
-            transition={{ duration: 0.35, delay: index * 0.04 }}
-            className="card group"
+{/* شبکه محصولات */}
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+  {products.map((product, index) => (
+    <Motion.Div
+      key={product.id}
+      initial={{ opacity: 0, y: 14 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.25 }}
+      transition={{ duration: 0.35, delay: index * 0.04 }}
+      className="card group"
+    >
+      <div className="ring" aria-hidden />
+
+      <div className="body">
+        <div
+          className="cover"
+          style={{
+            backgroundImage: product.img ? `url(${product.img})` : undefined,
+          }}
+        >
+          <Link
+            href={`/products/${product.id}`}
+            className="coverLink"
+            aria-label={`مشاهده مشخصات ${product.name}`}
+          />
+
+          <div className="coverGrad" />
+
+          {badges[product.id] && (
+            <div className="badge">{badges[product.id]}</div>
+          )}
+        </div>
+
+        <div className={`info ${isRTL ? "rtl" : "ltr"}`}>
+          <h3
+            className={`${isRTL ? bnazanin.className : ""} title text-lg md:text-xl font-bold text-white text-center mt-2 mb-2`}
           >
-            <div className="ring" aria-hidden />
+            <Link
+              href={`/products/${product.id}`}
+              className="hover:text-amber-300 transition"
+            >
+              {product.name}
+            </Link>
+          </h3>
 
-            <div className="body">
-              <div
-                className="cover"
-                style={{
-                  backgroundImage: product.img ? `url(${product.img})` : undefined,
-                }}
-              >
-                <div className="coverGrad" />
-                {badges[product.id] && (
-                  <div className="badge">{badges[product.id]}</div>
-                )}
-              </div>
+          <div className="mt-1 mb-3 flex items-center justify-center gap-1">
+            <span className={`${bnazanin.className} text-sm text-white/80`}>
+              قیمت:
+            </span>
 
-              <div className={`info ${isRTL ? "rtl" : "ltr"}`}>
-                <h3
-                  className={`${isRTL ? bnazanin.className : ""} title text-lg md:text-xl font-bold text-white text-center mt-2 mb-2`}
-                >
-                  {product.name}
-                </h3>
+            <span
+              className={`${bnazanin.className} text-[18px] font-bold text-amber-300`}
+            >
+              {formatPrice(product.price)}{" "}
+              <span className="text-sm font-normal">تومان</span>
+            </span>
+          </div>
 
-                <div className="mt-1 mb-3 flex items-center justify-center gap-1">
-                  <span className={`${bnazanin.className} text-sm text-white/80`}>
-                    قیمت:
-                  </span>
-                  <span
-                    className={`${bnazanin.className} text-[18px] font-bold text-amber-300`}
-                  >
-                    {formatPrice(product.price)}{" "}
-                    <span className="text-sm font-normal">تومان</span>
-                  </span>
-                </div>
+          <div className="flex justify-center gap-3 mt-1 mb-2">
+            <button
+              type="button"
+              onClick={() => handleAddToCart(product.id)}
+              className={`${bnazanin.className} btnPrimary`}
+            >
+              <Icon name="ShoppingCart" size={16} />
+              {dict.addToCart}
+            </button>
 
-                <div className="flex justify-center gap-3 mt-1 mb-2">
-                  <button
-                    type="button"
-                    onClick={() => handleAddToCart(product.id)}
-                    className={`${bnazanin.className} btnPrimary`}
-                  >
-                    <Icon name="ShoppingCart" size={16} />
-                    {dict.addToCart}
-                  </button>
-
-                  <Link
-                    href={`/products/${product.id}`}
-                    className={`btnGhost ${bnazanin.className}`}
-                  >
-                    <Icon name="BookOpenText" size={16} />
-                    مشخصات
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            <style jsx>{`
-              .card {
-                position: relative;
-                flex: 0 0 auto;
-                width: 100%;
-                border-radius: 16px;
-                overflow: hidden;
-                background: rgba(255, 255, 255, 0.05);
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                transition: all 0.3s ease;
-              }
-              .card:hover {
-                border-color: rgba(255, 255, 255, 0.2);
-                transform: translateY(-4px);
-              }
-
-              .body {
-                display: flex;
-                flex-direction: column;
-                height: 100%;
-              }
-
-              .cover {
-                position: relative;
-                height: 280px;
-                background-size: cover;
-                background-position: center;
-                border-top-left-radius: 16px;
-                border-top-right-radius: 16px;
-              }
-              @media (min-width: 768px) {
-                .cover {
-                  height: 320px;
-                }
-              }
-
-              .coverGrad {
-                position: absolute;
-                inset: 0;
-                background: linear-gradient(
-                  to bottom,
-                  rgba(0, 0, 0, 0.1),
-                  rgba(0, 0, 0, 0.3)
-                );
-              }
-
-              .badge {
-                position: absolute;
-                top: 12px;
-                right: 12px;
-                font-size: 11px;
-                font-weight: 700;
-                color: #fff;
-                background: rgba(12, 103, 242, 0.9);
-                padding: 6px 10px;
-                border-radius: 999px;
-              }
-
-              .info {
-                padding: 12px 0 16px;
-              }
-
-              .btnPrimary {
-                display: inline-flex;
-                align-items: center;
-                gap: 8px;
-                padding: 10px 18px;
-                border-radius: 12px;
-                font-weight: 800;
-                font-size: 15px;
-                line-height: 1;
-                white-space: nowrap;
-                background: var(--brand-primary);
-                color: #fff;
-                box-shadow: 0 6px 18px rgba(12, 103, 242, 0.25);
-                transition: filter 0.2s ease, transform 0.05s ease;
-              }
-              .btnPrimary:hover {
-                filter: brightness(1.08);
-              }
-              .btnPrimary:active {
-                transform: translateY(1px);
-              }
-
-              .btnGhost {
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                padding: 8px 16px;
-                min-width: 115px;
-                border-radius: 12px;
-                font-size: 15px;
-                font-weight: 500;
-                line-height: 1;
-                white-space: nowrap;
-                background-color: #374151;
-                color: #f3f4f6;
-                transition: background 0.2s ease, color 0.2s ease,
-                  transform 0.1s ease;
-              }
-              .btnGhost:hover {
-                background-color: #4b5563;
-                transform: translateY(-1px);
-              }
-            `}</style>
-          </Motion.Div>
-        ))}
+            <Link
+              href={`/products/${product.id}`}
+              className={`btnGhost ${bnazanin.className}`}
+            >
+              <Icon name="BookOpenText" size={16} />
+              مشخصات
+            </Link>
+          </div>
+        </div>
       </div>
+
+      <style jsx>{`
+        .card {
+          position: relative;
+          flex: 0 0 auto;
+          width: 100%;
+          border-radius: 16px;
+          overflow: hidden;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          transition: all 0.3s ease;
+        }
+
+        .card:hover {
+          border-color: rgba(255, 255, 255, 0.2);
+          transform: translateY(-4px);
+        }
+
+        .body {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+        }
+
+        .cover {
+          position: relative;
+          height: 280px;
+          background-size: cover;
+          background-position: center;
+          border-top-left-radius: 16px;
+          border-top-right-radius: 16px;
+          overflow: hidden;
+        }
+
+        @media (min-width: 768px) {
+          .cover {
+            height: 320px;
+          }
+        }
+
+        .coverLink {
+          position: absolute;
+          inset: 0;
+          z-index: 10;
+          display: block;
+          cursor: pointer;
+        }
+
+        .coverGrad {
+          position: absolute;
+          inset: 0;
+          z-index: 1;
+          pointer-events: none;
+          background: linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, 0.05),
+            rgba(0, 0, 0, 0.18)
+          );
+        }
+
+        .badge {
+          position: absolute;
+          z-index: 20;
+          top: 12px;
+          right: 12px;
+          font-size: 11px;
+          font-weight: 700;
+          color: #fff;
+          background: rgba(12, 103, 242, 0.9);
+          padding: 6px 10px;
+          border-radius: 999px;
+        }
+
+        .info {
+          padding: 12px 0 16px;
+        }
+
+        .btnPrimary {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 18px;
+          border-radius: 12px;
+          font-weight: 800;
+          font-size: 15px;
+          line-height: 1;
+          white-space: nowrap;
+          background: var(--brand-primary);
+          color: #fff;
+          box-shadow: 0 6px 18px rgba(12, 103, 242, 0.25);
+          transition: filter 0.2s ease, transform 0.05s ease;
+        }
+
+        .btnPrimary:hover {
+          filter: brightness(1.08);
+        }
+
+        .btnPrimary:active {
+          transform: translateY(1px);
+        }
+
+        .btnGhost {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 16px;
+          min-width: 115px;
+          border-radius: 12px;
+          font-size: 15px;
+          font-weight: 500;
+          line-height: 1;
+          white-space: nowrap;
+          background-color: #374151;
+          color: #f3f4f6;
+          transition: background 0.2s ease, color 0.2s ease,
+            transform 0.1s ease;
+        }
+
+        .btnGhost:hover {
+          background-color: #4b5563;
+          transform: translateY(-1px);
+        }
+      `}</style>
+    </Motion.Div>
+  ))}
+</div>
 
       {/* دکمه شناور برای باز کردن سبد وقتی بسته است */}
       {cartCount > 0 && !cartOpen && (

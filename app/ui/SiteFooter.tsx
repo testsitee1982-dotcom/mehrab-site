@@ -212,57 +212,63 @@ export function SiteFooter() {
             </div>
           </div>
 
-          {/* لینک‌های سریع */}
-          <div className="order-2 lg:order-4">
-            <div className="text-white font-extrabold text-[15px] inline-block">
-              لینک‌های سریع
-              <div className="mt-1 h-[2px] w-20 bg-[var(--brand-accent)]" />
-            </div>
+{/* لینک‌های سریع */}
+<div className="order-2 lg:order-4">
+  <div className="text-white font-extrabold text-[15px] inline-block">
+    لینک‌های سریع
+    <div className="mt-1 h-[2px] w-20 bg-[var(--brand-accent)]" />
+  </div>
 
-            <ul className="mt-3 grid gap-2 text-[13px] text-white/70">
-              <li>
-                <a className="hover:text-white transition" href="#products">
-                  محصولات
-                </a>
-              </li>
+  <ul className="mt-3 grid gap-2 text-[13px] text-white/70">
+    <li>
+      <a className="hover:text-white transition" href="#products">
+        محصولات
+      </a>
+    </li>
 
-              <li>
-                <a className="hover:text-white transition" href="#applications">
-                  کاربردها
-                </a>
-              </li>
+    <li>
+      <a className="hover:text-white transition" href="#applications">
+        کاربردها
+      </a>
+    </li>
 
-              <li>
-                <a className="hover:text-white transition" href="#blog">
-                  مقالات
-                </a>
-              </li>
+    <li>
+      <a className="hover:text-white transition" href="#blog">
+        مقالات
+      </a>
+    </li>
 
-              <li>
-                <a className="hover:text-white transition" href="/videos">
-                  ویدیوها
-                </a>
-              </li>
+    <li>
+      <a className="hover:text-white transition" href="/videos">
+        ویدیوها
+      </a>
+    </li>
 
-              <li>
-                <a className="hover:text-white transition" href="/images">
-                  تصاویر
-                </a>
-              </li>
+    <li>
+      <a className="hover:text-white transition" href="/images">
+        تصاویر
+      </a>
+    </li>
 
-              <li>
-                <a className="hover:text-white transition" href="#about">
-                  شرکت
-                </a>
-              </li>
+    <li>
+      <a className="hover:text-white transition" href="/approvals">
+        تاییدیه ها
+      </a>
+    </li>
 
-              <li>
-                <a className="hover:text-white transition" href="#contact">
-                  تماس
-                </a>
-              </li>
-            </ul>
-          </div>
+    <li>
+      <a className="hover:text-white transition" href="#about">
+        شرکت
+      </a>
+    </li>
+
+    <li>
+      <a className="hover:text-white transition" href="#contact">
+        تماس
+      </a>
+    </li>
+  </ul>
+</div>
 
           {/* لوگو و اینماد */}
           <div className="order-1 lg:order-5">

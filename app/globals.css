@@ -115,3 +115,13 @@ h6 {
     animation: none !important;
   }
 }
+
+/* مخفی کردن اسکرول افقی منوی موبایل */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

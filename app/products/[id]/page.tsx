@@ -86,7 +86,7 @@ const BENTONITE_ACTIVE_DOC: ProductDoc = {
     "ترکیب معدنی فعال‌شده بر پایه بنتونیت و کائولن، طراحی‌شده برای ایجاد محیط هادی پایدار و کاهش مؤثر مقاومت خاک در سیستم ارت.",
   date: COMMON_DATE,
   tags: [...COMMON_TAGS],
-  img: "/images/products/700.png",
+  img: "/images/products/active-bentonite-earthing-ground-enhancement.png",
   body: [
     {
       type: "p",
@@ -130,7 +130,7 @@ const BENTONITE_MICRONIZED_DOC: ProductDoc = {
     "بنتونیت با دانه‌بندی میکرونی یکنواخت جهت ایجاد تماس بهتر با خاک و افزایش پایداری عملکرد سیستم ارت.",
   date: COMMON_DATE,
   tags: [...COMMON_TAGS],
-  img: "/images/products/701.png",
+  img: "/images/products/micronized-bentonite-earth-pit-earthing.png",
   body: [
     {
       type: "p",
@@ -164,7 +164,7 @@ const LOM_DOC: ProductDoc = {
   subtitle: "ژل کاهنده مقاومت با قابلیت پایداری مناسب، افزایش سطح تماس و بهبود رسانایی اطراف الکترود ارت.",
   date: COMMON_DATE,
   tags: [...COMMON_TAGS],
-  img: "/images/products/702.png",
+  img: "/images/products/lrm-grounding-gel-earth-resistance-reducer.png",
   body: [
     {
       type: "p",
@@ -195,7 +195,7 @@ const LRM_DOC: ProductDoc = {
     "مواد کاهنده/بهبوددهنده اتصال زمین با فرمولاسیون صنعتی جهت کاهش مقاومت و افزایش پایداری سیستم ارتینگ.",
   date: COMMON_DATE,
   tags: [...COMMON_TAGS],
-  img: "/images/products/703.png",
+  img: "/images/products/lrm-ground-enhancement-material-conductive-bentonite.png",
   body: [
     {
       type: "p",
@@ -221,7 +221,7 @@ const SUPER_ACTIVE_PREMIUM_DOC: ProductDoc = {
     "ترکیب مهندسی‌شده بر پایه بنتونیت فرآوری‌شده برای کاهش چشمگیر مقاومت زمین و افزایش پایداری سیستم ارتینگ.",
   date: COMMON_DATE,
   tags: [...COMMON_TAGS],
-  img: "/images/products/704.png",
+  img: "/images/products/export-super-active-ground-enhancement-material.png",
   body: [
     {
       type: "p",
@@ -263,7 +263,7 @@ const GRM_DOC: ProductDoc = {
     "این محصول مطابق با استاندارد IEC و «مورد تایید شرکت توزیع نیروی برق استان تهران» می‌باشد.",
   date: "۱۴۰۳/۰۸/۲۹",
   tags: [...COMMON_TAGS],
-  img: "/images/products/705.png",
+  img: "/images/products/grm-ground-recovering-material-earthing.png",
   body: [
     {
       type: "p",
@@ -299,7 +299,7 @@ const SODIUM_ELECTROLYTE_DOC: ProductDoc = {
   subtitle: "ترکیب کاهنده با مواد الکترولیت تقویت‌شده جهت بهبود سریع عملکرد ارت در مناطق خشک.",
   date: COMMON_DATE,
   tags: [...COMMON_TAGS],
-  img: "/images/products/706.png",
+  img: "/images/products/sodium-bentonite-electrolyte-ground-enhancement.png",
   body: [
     {
       type: "p",
@@ -324,7 +324,7 @@ const MULTI_ACTIVE_DOC: ProductDoc = {
   subtitle: "پودر اکتیو با کاربرد عمومی صنعتی، مناسب برای شرایط سخت و محیط‌های مرطوب.",
   date: COMMON_DATE,
   tags: [...COMMON_TAGS],
-  img: "/images/products/707.png",
+  img: "/images/products/multi-active-industrial-earthing-powder.png",
   body: [
     {
       type: "p",
