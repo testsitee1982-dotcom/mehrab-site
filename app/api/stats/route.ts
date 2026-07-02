@@ -1,5 +1,5 @@
 // app/api/stats/route.ts
-import { Redis } from "@upstash/redis";
+import { neon } from "@neondatabase/serverless";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
@@ -16,80 +16,25 @@ type Stats = {
   total: number;
 };
 
-const redisUrl =
-  process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-
-const redisToken =
-  process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-
-const redis =
-  redisUrl && redisToken
-    ? new Redis({
-        url: redisUrl,
-        token: redisToken,
-      })
-    : null;
+const DATABASE_URL =
+  process.env.POSTGRES_URL ||
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.POSTGRES_URL_NON_POOLING ||
+  process.env.DATABASE_URL ||
+  process.env.STORAGE_URL;
 
 const VISITOR_COOKIE = "mehrab_visitor_id";
-const ONLINE_WINDOW_MS = 2 * 60 * 1000;
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365 * 10;
+const ONLINE_WINDOW_MINUTES = 2;
 const STATS_TIME_ZONE = process.env.STATS_TIME_ZONE || "Asia/Tehran";
 
-function pad2(n: number) {
-  return String(n).padStart(2, "0");
+if (!DATABASE_URL) {
+  console.warn("Stats API: PostgreSQL DATABASE_URL is not configured.");
 }
 
-function getDateParts(date: Date) {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: STATS_TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
+const sql = DATABASE_URL ? neon(DATABASE_URL) : null;
 
-  return {
-    year: Number(parts.find((p) => p.type === "year")?.value),
-    month: Number(parts.find((p) => p.type === "month")?.value),
-    day: Number(parts.find((p) => p.type === "day")?.value),
-  };
-}
-
-function dateKey(date = new Date()) {
-  const { year, month, day } = getDateParts(date);
-  return `${year}-${pad2(month)}-${pad2(day)}`;
-}
-
-function addDaysToDateKey(key: string, days: number) {
-  const [year, month, day] = key.split("-").map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
-  date.setUTCDate(date.getUTCDate() + days);
-
-  return `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(
-    date.getUTCDate()
-  )}`;
-}
-
-function monthKey(today: string) {
-  const [year, month] = today.split("-").map(Number);
-  return `${year}-${pad2(month)}`;
-}
-
-function yearKey(today: string) {
-  const [year] = today.split("-").map(Number);
-  return String(year);
-}
-
-function weekKey(today: string) {
-  const [year, month, day] = today.split("-").map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
-  const start = new Date(Date.UTC(date.getUTCFullYear(), 0, 1, 12, 0, 0));
-  const diffDays = Math.floor(
-    (date.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)
-  );
-  const week = Math.floor(diffDays / 7) + 1;
-
-  return `${date.getUTCFullYear()}-W${pad2(week)}`;
-}
+let initPromise: Promise<void> | null = null;
 
 function getVisitorId(req: NextRequest) {
   const current = req.cookies.get(VISITOR_COOKIE)?.value;
@@ -99,6 +44,127 @@ function getVisitorId(req: NextRequest) {
   }
 
   return crypto.randomUUID();
+}
+
+async function initDatabase() {
+  if (!sql) throw new Error("PostgreSQL is not configured.");
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS stats_visitors (
+      visitor_id TEXT PRIMARY KEY,
+      first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS stats_daily_visits (
+      visitor_id TEXT NOT NULL,
+      visit_date DATE NOT NULL,
+      first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (visitor_id, visit_date)
+    )
+  `;
+
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_stats_visitors_last_seen
+    ON stats_visitors (last_seen_at)
+  `;
+
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_stats_daily_visits_date
+    ON stats_daily_visits (visit_date)
+  `;
+}
+
+async function ensureDatabase() {
+  if (!initPromise) {
+    initPromise = initDatabase();
+  }
+
+  return initPromise;
+}
+
+async function getStats(visitorId: string): Promise<Stats> {
+  if (!sql) throw new Error("PostgreSQL is not configured.");
+
+  await ensureDatabase();
+
+  const rows = await sql`
+    WITH current_day AS (
+      SELECT (NOW() AT TIME ZONE ${STATS_TIME_ZONE})::DATE AS today
+    ),
+    upsert_visitor AS (
+      INSERT INTO stats_visitors (visitor_id, first_seen_at, last_seen_at)
+      VALUES (${visitorId}, NOW(), NOW())
+      ON CONFLICT (visitor_id)
+      DO UPDATE SET last_seen_at = NOW()
+      RETURNING visitor_id
+    ),
+    insert_today AS (
+      INSERT INTO stats_daily_visits (visitor_id, visit_date, first_seen_at)
+      SELECT ${visitorId}, today, NOW()
+      FROM current_day
+      ON CONFLICT (visitor_id, visit_date) DO NOTHING
+      RETURNING visitor_id
+    )
+    SELECT
+      (
+        SELECT COUNT(*)
+        FROM stats_visitors
+        WHERE last_seen_at >= NOW() - (${ONLINE_WINDOW_MINUTES} || ' minutes')::INTERVAL
+      )::INT AS online,
+
+      (
+        SELECT COUNT(*)
+        FROM stats_daily_visits, current_day
+        WHERE visit_date = current_day.today
+      )::INT AS today,
+
+      (
+        SELECT COUNT(*)
+        FROM stats_daily_visits, current_day
+        WHERE visit_date = current_day.today - INTERVAL '1 day'
+      )::INT AS yesterday,
+
+      (
+        SELECT COUNT(DISTINCT visitor_id)
+        FROM stats_daily_visits, current_day
+        WHERE visit_date >= current_day.today - INTERVAL '6 days'
+          AND visit_date <= current_day.today
+      )::INT AS week,
+
+      (
+        SELECT COUNT(DISTINCT visitor_id)
+        FROM stats_daily_visits, current_day
+        WHERE visit_date >= DATE_TRUNC('month', current_day.today)::DATE
+          AND visit_date <= current_day.today
+      )::INT AS month,
+
+      (
+        SELECT COUNT(DISTINCT visitor_id)
+        FROM stats_daily_visits, current_day
+        WHERE visit_date >= DATE_TRUNC('year', current_day.today)::DATE
+          AND visit_date <= current_day.today
+      )::INT AS year,
+
+      (
+        SELECT COUNT(*)
+        FROM stats_visitors
+      )::INT AS total
+  `;
+
+  const row = rows[0] as Stats;
+
+  return {
+    online: Number(row.online || 0),
+    today: Number(row.today || 0),
+    yesterday: Number(row.yesterday || 0),
+    week: Number(row.week || 0),
+    month: Number(row.month || 0),
+    year: Number(row.year || 0),
+    total: Number(row.total || 0),
+  };
 }
 
 function jsonResponse(stats: Stats, visitorId: string) {
@@ -122,83 +188,6 @@ function jsonResponse(stats: Stats, visitorId: string) {
   return res;
 }
 
-function errorResponse(message: string, status = 500) {
-  return NextResponse.json(
-    {
-      error: message,
-      online: 0,
-      today: 0,
-      yesterday: 0,
-      week: 0,
-      month: 0,
-      year: 0,
-      total: 0,
-    },
-    {
-      status,
-      headers: {
-        "Cache-Control": "no-store",
-      },
-    }
-  );
-}
-
-async function getStats(visitorId: string): Promise<Stats> {
-  if (!redis) {
-    throw new Error("Redis is not configured.");
-  }
-
-  const nowMs = Date.now();
-
-  const today = dateKey();
-  const yesterday = addDaysToDateKey(today, -1);
-
-  const todaySet = `stats:day:${today}`;
-  const yesterdaySet = `stats:day:${yesterday}`;
-  const weekSet = `stats:week:${weekKey(today)}`;
-  const monthSet = `stats:month:${monthKey(today)}`;
-  const yearSet = `stats:year:${yearKey(today)}`;
-  const totalSet = "stats:total";
-  const onlineSet = "stats:online";
-
-  await Promise.all([
-    redis.sadd(todaySet, visitorId),
-    redis.sadd(weekSet, visitorId),
-    redis.sadd(monthSet, visitorId),
-    redis.sadd(yearSet, visitorId),
-    redis.sadd(totalSet, visitorId),
-    redis.zadd(onlineSet, {
-      score: nowMs,
-      member: visitorId,
-    }),
-  ]);
-
-  await redis.zremrangebyscore(onlineSet, 0, nowMs - ONLINE_WINDOW_MS);
-
-  const [online, todayCount, yesterdayCount, weekCount, monthCount, yearCount, totalCount] =
-    await Promise.all([
-      redis.zcard(onlineSet),
-      redis.scard(todaySet),
-      redis.scard(yesterdaySet),
-      redis.scard(weekSet),
-      redis.scard(monthSet),
-      redis.scard(yearSet),
-      redis.scard(totalSet),
-    ]);
-
-  const total = Number(totalCount || 0);
-
-  return {
-    online: Number(online || 0),
-    today: Number(todayCount || 0),
-    yesterday: Number(yesterdayCount || 0),
-    week: Math.min(Number(weekCount || 0), total),
-    month: Math.min(Number(monthCount || 0), total),
-    year: Math.min(Number(yearCount || 0), total),
-    total,
-  };
-}
-
 export async function GET(req: NextRequest) {
   const visitorId = getVisitorId(req);
 
@@ -207,6 +196,24 @@ export async function GET(req: NextRequest) {
     return jsonResponse(stats, visitorId);
   } catch (error) {
     console.error("Stats API error:", error);
-    return errorResponse("Stats storage is not available.");
+
+    return NextResponse.json(
+      {
+        error: "Stats storage is not available. Check Neon/PostgreSQL environment variables.",
+        online: 0,
+        today: 0,
+        yesterday: 0,
+        week: 0,
+        month: 0,
+        year: 0,
+        total: 0,
+      },
+      {
+        status: 500,
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   }
 }
