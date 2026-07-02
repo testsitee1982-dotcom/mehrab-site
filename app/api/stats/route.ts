@@ -39,23 +39,23 @@ function pad2(n: number) {
   return String(n).padStart(2, "0");
 }
 
-function getDateParts(date: Date, timeZone: string) {
+function getDateParts(date: Date) {
   const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
+    timeZone: STATS_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   }).formatToParts(date);
 
-  const year = Number(parts.find((p) => p.type === "year")?.value);
-  const month = Number(parts.find((p) => p.type === "month")?.value);
-  const day = Number(parts.find((p) => p.type === "day")?.value);
-
-  return { year, month, day };
+  return {
+    year: Number(parts.find((p) => p.type === "year")?.value),
+    month: Number(parts.find((p) => p.type === "month")?.value),
+    day: Number(parts.find((p) => p.type === "day")?.value),
+  };
 }
 
 function dateKey(date = new Date()) {
-  const { year, month, day } = getDateParts(date, STATS_TIME_ZONE);
+  const { year, month, day } = getDateParts(date);
   return `${year}-${pad2(month)}-${pad2(day)}`;
 }
 
@@ -69,53 +69,26 @@ function addDaysToDateKey(key: string, days: number) {
   )}`;
 }
 
-function getDayKeysForLastDays(todayKey: string, days: number) {
-  return Array.from(
-    { length: days },
-    (_, i) => `stats:day:${addDaysToDateKey(todayKey, -i)}`
+function monthKey(today: string) {
+  const [year, month] = today.split("-").map(Number);
+  return `${year}-${pad2(month)}`;
+}
+
+function yearKey(today: string) {
+  const [year] = today.split("-").map(Number);
+  return String(year);
+}
+
+function weekKey(today: string) {
+  const [year, month, day] = today.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  const start = new Date(Date.UTC(date.getUTCFullYear(), 0, 1, 12, 0, 0));
+  const diffDays = Math.floor(
+    (date.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)
   );
-}
+  const week = Math.floor(diffDays / 7) + 1;
 
-function getDayKeysForCurrentMonth(todayKey: string) {
-  const [year, month, day] = todayKey.split("-").map(Number);
-
-  return Array.from(
-    { length: day },
-    (_, i) => `stats:day:${year}-${pad2(month)}-${pad2(i + 1)}`
-  );
-}
-
-function getDayKeysForCurrentYear(todayKey: string) {
-  const [year, currentMonth, currentDay] = todayKey.split("-").map(Number);
-  const keys: string[] = [];
-
-  for (let month = 1; month <= currentMonth; month += 1) {
-    const lastDay =
-      month === currentMonth
-        ? currentDay
-        : new Date(Date.UTC(year, month, 0)).getUTCDate();
-
-    for (let day = 1; day <= lastDay; day += 1) {
-      keys.push(`stats:day:${year}-${pad2(month)}-${pad2(day)}`);
-    }
-  }
-
-  return keys;
-}
-
-async function uniqueCountFromRedis(redisClient: Redis, keys: string[]) {
-  if (keys.length === 0) return 0;
-
-  const all = new Set<string>();
-
-  for (const key of keys) {
-    const members = await redisClient.smembers(key);
-    for (const member of members || []) {
-      all.add(String(member));
-    }
-  }
-
-  return all.size;
+  return `${date.getUTCFullYear()}-W${pad2(week)}`;
 }
 
 function getVisitorId(req: NextRequest) {
@@ -164,10 +137,7 @@ function errorResponse(message: string, status = 500) {
     {
       status,
       headers: {
-        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-        Pragma: "no-cache",
-        Expires: "0",
-        "Surrogate-Control": "no-store",
+        "Cache-Control": "no-store",
       },
     }
   );
@@ -175,44 +145,45 @@ function errorResponse(message: string, status = 500) {
 
 async function getStats(visitorId: string): Promise<Stats> {
   if (!redis) {
-    throw new Error(
-      "Redis is not configured. Set KV_REST_API_URL and KV_REST_API_TOKEN in Vercel Environment Variables."
-    );
+    throw new Error("Redis is not configured.");
   }
 
   const nowMs = Date.now();
-  const today = dateKey(new Date());
+
+  const today = dateKey();
   const yesterday = addDaysToDateKey(today, -1);
 
-  const todayKey = `stats:day:${today}`;
-  const yesterdayKey = `stats:day:${yesterday}`;
-  const totalKey = "stats:total";
-  const onlineKey = "stats:online";
+  const todaySet = `stats:day:${today}`;
+  const yesterdaySet = `stats:day:${yesterday}`;
+  const weekSet = `stats:week:${weekKey(today)}`;
+  const monthSet = `stats:month:${monthKey(today)}`;
+  const yearSet = `stats:year:${yearKey(today)}`;
+  const totalSet = "stats:total";
+  const onlineSet = "stats:online";
 
   await Promise.all([
-    redis.sadd(todayKey, visitorId),
-    redis.sadd(totalKey, visitorId),
-    redis.zadd(onlineKey, {
+    redis.sadd(todaySet, visitorId),
+    redis.sadd(weekSet, visitorId),
+    redis.sadd(monthSet, visitorId),
+    redis.sadd(yearSet, visitorId),
+    redis.sadd(totalSet, visitorId),
+    redis.zadd(onlineSet, {
       score: nowMs,
       member: visitorId,
     }),
   ]);
 
-  await redis.zremrangebyscore(onlineKey, 0, nowMs - ONLINE_WINDOW_MS);
+  await redis.zremrangebyscore(onlineSet, 0, nowMs - ONLINE_WINDOW_MS);
 
-  const weekKeys = getDayKeysForLastDays(today, 7);
-  const monthKeys = getDayKeysForCurrentMonth(today);
-  const yearKeys = getDayKeysForCurrentYear(today);
-
-  const [online, todayCount, yesterdayCount, totalCount, week, month, year] =
+  const [online, todayCount, yesterdayCount, weekCount, monthCount, yearCount, totalCount] =
     await Promise.all([
-      redis.zcard(onlineKey),
-      redis.scard(todayKey),
-      redis.scard(yesterdayKey),
-      redis.scard(totalKey),
-      uniqueCountFromRedis(redis, weekKeys),
-      uniqueCountFromRedis(redis, monthKeys),
-      uniqueCountFromRedis(redis, yearKeys),
+      redis.zcard(onlineSet),
+      redis.scard(todaySet),
+      redis.scard(yesterdaySet),
+      redis.scard(weekSet),
+      redis.scard(monthSet),
+      redis.scard(yearSet),
+      redis.scard(totalSet),
     ]);
 
   const total = Number(totalCount || 0);
@@ -221,9 +192,9 @@ async function getStats(visitorId: string): Promise<Stats> {
     online: Number(online || 0),
     today: Number(todayCount || 0),
     yesterday: Number(yesterdayCount || 0),
-    week: Math.min(Number(week || 0), total),
-    month: Math.min(Number(month || 0), total),
-    year: Math.min(Number(year || 0), total),
+    week: Math.min(Number(weekCount || 0), total),
+    month: Math.min(Number(monthCount || 0), total),
+    year: Math.min(Number(yearCount || 0), total),
     total,
   };
 }
@@ -236,9 +207,6 @@ export async function GET(req: NextRequest) {
     return jsonResponse(stats, visitorId);
   } catch (error) {
     console.error("Stats API error:", error);
-
-    return errorResponse(
-      "Stats storage is not available. Check Redis/Upstash environment variables in Vercel."
-    );
+    return errorResponse("Stats storage is not available.");
   }
 }
