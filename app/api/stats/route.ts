@@ -33,9 +33,6 @@ const redis =
 const VISITOR_COOKIE = "mehrab_visitor_id";
 const ONLINE_WINDOW_MS = 2 * 60 * 1000;
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365 * 10;
-
-// برای اینکه Today / Yesterday روی Vercel با UTC اشتباه نشود.
-// اگر سایت برای ایران است همین را بگذارید. در Vercel هم می‌توانید STATS_TIME_ZONE را عوض کنید.
 const STATS_TIME_ZONE = process.env.STATS_TIME_ZONE || "Asia/Tehran";
 
 function pad2(n: number) {
@@ -57,12 +54,9 @@ function getDateParts(date: Date, timeZone: string) {
   return { year, month, day };
 }
 
-function dateKeyFromParts(parts: { year: number; month: number; day: number }) {
-  return `${parts.year}-${pad2(parts.month)}-${pad2(parts.day)}`;
-}
-
 function dateKey(date = new Date()) {
-  return dateKeyFromParts(getDateParts(date, STATS_TIME_ZONE));
+  const { year, month, day } = getDateParts(date, STATS_TIME_ZONE);
+  return `${year}-${pad2(month)}-${pad2(day)}`;
 }
 
 function addDaysToDateKey(key: string, days: number) {
@@ -109,13 +103,13 @@ function getDayKeysForCurrentYear(todayKey: string) {
   return keys;
 }
 
-async function uniqueCountFromRedis(redis: Redis, keys: string[]) {
+async function uniqueCountFromRedis(redisClient: Redis, keys: string[]) {
   if (keys.length === 0) return 0;
 
   const all = new Set<string>();
 
   for (const key of keys) {
-    const members = await redis.smembers(key);
+    const members = await redisClient.smembers(key);
     for (const member of members || []) {
       all.add(String(member));
     }
@@ -195,7 +189,6 @@ async function getStats(visitorId: string): Promise<Stats> {
   const totalKey = "stats:total";
   const onlineKey = "stats:online";
 
-  // هیچ expire برای stats:day و stats:total نمی‌گذاریم؛ بنابراین با آپدیت سایت یا redeploy پاک نمی‌شوند.
   await Promise.all([
     redis.sadd(todayKey, visitorId),
     redis.sadd(totalKey, visitorId),
@@ -217,9 +210,9 @@ async function getStats(visitorId: string): Promise<Stats> {
       redis.scard(todayKey),
       redis.scard(yesterdayKey),
       redis.scard(totalKey),
-      uniqueCountFromRedis(weekKeys),
-      uniqueCountFromRedis(monthKeys),
-      uniqueCountFromRedis(yearKeys),
+      uniqueCountFromRedis(redis, weekKeys),
+      uniqueCountFromRedis(redis, monthKeys),
+      uniqueCountFromRedis(redis, yearKeys),
     ]);
 
   const total = Number(totalCount || 0);
