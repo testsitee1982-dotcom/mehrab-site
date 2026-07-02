@@ -109,15 +109,19 @@ function getDayKeysForCurrentYear(todayKey: string) {
   return keys;
 }
 
-async function uniqueCountFromRedis(keys: string[]) {
-  if (!redis || keys.length === 0) return 0;
+async function uniqueCountFromRedis(redis: Redis, keys: string[]) {
+  if (keys.length === 0) return 0;
 
-  if (keys.length === 1) {
-    return Number(await redis.scard(keys[0])) || 0;
+  const all = new Set<string>();
+
+  for (const key of keys) {
+    const members = await redis.smembers(key);
+    for (const member of members || []) {
+      all.add(String(member));
+    }
   }
 
-  const members = (await (redis as any).sunion(...keys)) as string[] | null;
-  return Array.isArray(members) ? members.length : 0;
+  return all.size;
 }
 
 function getVisitorId(req: NextRequest) {
