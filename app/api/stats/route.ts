@@ -116,7 +116,7 @@ async function uniqueCountFromRedis(keys: string[]) {
     return Number(await redis.scard(keys[0])) || 0;
   }
 
-  const members = (await redis.sunion(...keys)) as string[] | null;
+  const members = (await (redis as any).sunion(...keys)) as string[] | null;
   return Array.isArray(members) ? members.length : 0;
 }
 
