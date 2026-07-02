@@ -1,9 +1,142 @@
-"use client";
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { use } from "react";
-import { useRouter } from "next/navigation";
+import { SITE_BRAND_EN, SITE_LOGO, SITE_NAME, SITE_URL } from "@/app/lib/seo";
+
+
+type ProductSeo = {
+  title: string;
+  description: string;
+  keywords: string[];
+  category: string;
+};
+
+const PRODUCT_SEO: Record<string, ProductSeo> = {
+  "active-bentonite": {
+    title: "بنتونیت اکتیو ارتینگ | خرید بنتونیت چاه ارت",
+    description:
+      "بنتونیت اکتیو مخصوص سیستم ارتینگ برای کاهش مقاومت زمین، حفظ رطوبت اطراف الکترود و بهبود عملکرد چاه ارت در پروژه‌های صنعتی و ساختمانی.",
+    category: "بنتونیت ارتینگ",
+    keywords: [
+      "بنتونیت اکتیو",
+      "بنتونیت ارتینگ",
+      "بنتونیت چاه ارت",
+      "خرید بنتونیت",
+      "قیمت بنتونیت",
+      "Active Bentonite",
+      "Earthing Bentonite",
+      "Grounding Bentonite",
+    ],
+  },
+
+  "micronized-bentonite": {
+    title: "بنتونیت میکرونیزه ارتینگ | Grounding Bentonite",
+    description:
+      "بنتونیت میکرونیزه مخصوص ارتینگ با دانه‌بندی یکنواخت برای افزایش تماس الکترود با خاک و کاهش مقاومت الکتریکی زمین.",
+    category: "بنتونیت میکرونیزه",
+    keywords: [
+      "بنتونیت میکرونیزه",
+      "بنتونیت ارتینگ",
+      "Grounding Bentonite",
+      "Earthing Bentonite",
+      "بنتونیت صنعتی",
+      "چاه ارت",
+    ],
+  },
+
+  lom: {
+    title: "LOM | ژل کاهنده مقاومت الکتریکی زمین",
+    description:
+      "ژل کاهنده مقاومت الکتریکی زمین LOM برای افزایش سطح تماس الکترود، بهبود رسانایی اطراف الکترود ارت و افزایش پایداری سیستم ارتینگ.",
+    category: "ژل کاهنده مقاومت زمین",
+    keywords: [
+      "LOM",
+      "ژل کاهنده مقاومت زمین",
+      "ژل ارتینگ",
+      "مواد کاهنده مقاومت زمین",
+      "چاه ارت",
+      "سیستم ارتینگ",
+    ],
+  },
+
+  lrm: {
+    title: "LRM | Low Resistance Material | ماده کاهنده مقاومت زمین",
+    description:
+      "LRM ماده تخصصی کاهنده مقاومت زمین برای سیستم‌های ارتینگ صنعتی، پست برق، دکل مخابراتی، چاه ارت و شبکه اتصال زمین.",
+    category: "مواد کاهنده مقاومت زمین",
+    keywords: [
+      "LRM",
+      "Low Resistance Material",
+      "مواد کاهنده مقاومت زمین",
+      "ماده کاهنده مقاومت زمین",
+      "ارتینگ",
+      "چاه ارت",
+      "Ground Enhancement Material",
+    ],
+  },
+
+  "super-active-bentonite": {
+    title: "سوپر اکتیو کاهنده مقاومت زمین | بنتونیت ویژه ارتینگ",
+    description:
+      "سوپر اکتیو کاهنده مقاومت الکتریکی بر پایه بنتونیت فرآوری‌شده برای کاهش چشمگیر مقاومت زمین و افزایش پایداری سیستم ارتینگ.",
+    category: "بنتونیت سوپر اکتیو",
+    keywords: [
+      "سوپر اکتیو کاهنده مقاومت",
+      "بنتونیت ویژه ارتینگ",
+      "بنتونیت فرآوری شده",
+      "مواد کاهنده مقاومت زمین",
+      "Ground Enhancement Material",
+      "چاه ارت",
+    ],
+  },
+
+  grm: {
+    title: "GRM | Ground Reducing Material | مواد کاهنده مقاومت زمین",
+    description:
+      "GRM مواد کاهنده مقاومت الکتریکی زمین با هدایت الکتریکی بالا برای پرکردن اطراف هادی ارت، چاه ارت و سیستم‌های اتصال زمین.",
+    category: "Ground Reducing Material",
+    keywords: [
+      "GRM",
+      "Ground Reducing Material",
+      "مواد کاهنده مقاومت زمین",
+      "خاک کاهنده مقاومت زمین",
+      "ارتینگ صنعتی",
+      "چاه ارت",
+      "Ground Enhancement Material",
+    ],
+  },
+
+  "sodium-bentonite-electrolyte": {
+    title: "خاک کاهنده سوپر اکتیو سدیم‌دار حاوی الکترولیت",
+    description:
+      "خاک کاهنده سوپر اکتیو سدیم‌دار حاوی الکترولیت برای بهبود سریع عملکرد ارت در مناطق خشک و کم‌رطوبت.",
+    category: "خاک کاهنده مقاومت زمین",
+    keywords: [
+      "خاک کاهنده سوپر اکتیو",
+      "بنتونیت سدیم دار",
+      "مواد الکترولیت ارت",
+      "خاک کاهنده مقاومت زمین",
+      "چاه ارت",
+      "ارتینگ صنعتی",
+    ],
+  },
+
+  "multi-active-powder": {
+    title: "پودر اکتیو چندمنظوره صنعتی | مواد بهبوددهنده ارتینگ",
+    description:
+      "پودر اکتیو چندمنظوره صنعتی مناسب کاربردهای صنعتی، شرایط سخت و بهبود رسانایی خاک در پروژه‌های ارتینگ و زیرساختی.",
+    category: "پودر اکتیو صنعتی",
+    keywords: [
+      "پودر اکتیو صنعتی",
+      "پودر کاهنده مقاومت زمین",
+      "مواد بهبوددهنده خاک",
+      "ارتینگ صنعتی",
+      "مواد کاهنده مقاومت زمین",
+      "چاه ارت",
+    ],
+  },
+};
 
 type ProductDoc = {
   title: string;
@@ -348,7 +481,15 @@ const MULTI_ACTIVE_DOC: ProductDoc = {
 /* ✅ مپ دقیق: هر p دقیقا سر جای خودش (مشکل جابجایی مشخصات حل می‌شود) */
 /* ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ */
+/* ✅ Product Routes (SEO + Legacy URLs)                              */
+/* ------------------------------------------------------------------ */
+
 const PRODUCT_DOCS: Record<string, ProductDoc> = {
+  /* =========================
+     Legacy URLs (قدیمی)
+  ========================= */
+
   // 700
   p1: BENTONITE_ACTIVE_DOC,
 
@@ -372,23 +513,355 @@ const PRODUCT_DOCS: Record<string, ProductDoc> = {
 
   // 707
   p8: MULTI_ACTIVE_DOC,
+
+  /* =========================
+     SEO Friendly URLs
+  ========================= */
+
+  "active-bentonite": BENTONITE_ACTIVE_DOC,
+  "micronized-bentonite": BENTONITE_MICRONIZED_DOC,
+  "lom": LOM_DOC,
+  "lrm": LRM_DOC,
+  "super-active-bentonite": SUPER_ACTIVE_PREMIUM_DOC,
+  "grm": GRM_DOC,
+  "sodium-bentonite-electrolyte": SODIUM_ELECTROLYTE_DOC,
+  "multi-active-powder": MULTI_ACTIVE_DOC,
 };
 
-export default function ProductDetailsPage(props: {
+
+type ProductDocKey = keyof typeof PRODUCT_DOCS;
+type ProductSeoKey = keyof typeof PRODUCT_SEO;
+
+type ProductRoute = {
+  dataKey: ProductDocKey;
+  seoKey: ProductSeoKey;
+  canonicalSlug: string;
+};
+
+/*
+  نکته مهم:
+  - dataKey مشخص می‌کند متن محصول از کدام آیتم PRODUCT_DOCS خوانده شود.
+  - seoKey مشخص می‌کند متادیتا از کدام آیتم PRODUCT_SEO خوانده شود.
+  - canonicalSlug آدرس نهایی سئویی است که باید در canonical و sitemap استفاده شود.
+*/
+const PRODUCT_ROUTES: Record<string, ProductRoute> = {
+  /* Legacy URLs */
+  p1: {
+    dataKey: "p1",
+    seoKey: "active-bentonite",
+    canonicalSlug: "active-bentonite-earthing-ground-enhancement",
+  },
+  p2: {
+    dataKey: "p2",
+    seoKey: "micronized-bentonite",
+    canonicalSlug: "micronized-bentonite-earth-pit-earthing",
+  },
+  p3: {
+    dataKey: "p3",
+    seoKey: "lom",
+    canonicalSlug: "lrm-grounding-gel-earth-resistance-reducer",
+  },
+  p4: {
+    dataKey: "p4",
+    seoKey: "lrm",
+    canonicalSlug: "lrm-ground-enhancement-material-conductive-bentonite",
+  },
+  p5: {
+    dataKey: "p5",
+    seoKey: "super-active-bentonite",
+    canonicalSlug: "export-super-active-ground-enhancement-material",
+  },
+  p6: {
+    dataKey: "p6",
+    seoKey: "grm",
+    canonicalSlug: "grm-ground-recovering-material-earthing",
+  },
+  p7: {
+    dataKey: "p7",
+    seoKey: "sodium-bentonite-electrolyte",
+    canonicalSlug: "sodium-bentonite-electrolyte-ground-enhancement",
+  },
+  p8: {
+    dataKey: "p8",
+    seoKey: "multi-active-powder",
+    canonicalSlug: "multi-active-industrial-earthing-powder",
+  },
+
+  /* Short SEO URLs */
+  "active-bentonite": {
+    dataKey: "p1",
+    seoKey: "active-bentonite",
+    canonicalSlug: "active-bentonite-earthing-ground-enhancement",
+  },
+  "micronized-bentonite": {
+    dataKey: "p2",
+    seoKey: "micronized-bentonite",
+    canonicalSlug: "micronized-bentonite-earth-pit-earthing",
+  },
+  lom: {
+    dataKey: "p3",
+    seoKey: "lom",
+    canonicalSlug: "lrm-grounding-gel-earth-resistance-reducer",
+  },
+  lrm: {
+    dataKey: "p4",
+    seoKey: "lrm",
+    canonicalSlug: "lrm-ground-enhancement-material-conductive-bentonite",
+  },
+  "super-active-bentonite": {
+    dataKey: "p5",
+    seoKey: "super-active-bentonite",
+    canonicalSlug: "export-super-active-ground-enhancement-material",
+  },
+  grm: {
+    dataKey: "p6",
+    seoKey: "grm",
+    canonicalSlug: "grm-ground-recovering-material-earthing",
+  },
+  "sodium-bentonite-electrolyte": {
+    dataKey: "p7",
+    seoKey: "sodium-bentonite-electrolyte",
+    canonicalSlug: "sodium-bentonite-electrolyte-ground-enhancement",
+  },
+  "multi-active-powder": {
+    dataKey: "p8",
+    seoKey: "multi-active-powder",
+    canonicalSlug: "multi-active-industrial-earthing-powder",
+  },
+
+  /* Final Product Slugs from app/lib/products.ts */
+  "active-bentonite-earthing-ground-enhancement": {
+    dataKey: "p1",
+    seoKey: "active-bentonite",
+    canonicalSlug: "active-bentonite-earthing-ground-enhancement",
+  },
+  "micronized-bentonite-earth-pit-earthing": {
+    dataKey: "p2",
+    seoKey: "micronized-bentonite",
+    canonicalSlug: "micronized-bentonite-earth-pit-earthing",
+  },
+  "lrm-grounding-gel-earth-resistance-reducer": {
+    dataKey: "p3",
+    seoKey: "lom",
+    canonicalSlug: "lrm-grounding-gel-earth-resistance-reducer",
+  },
+  "lrm-ground-enhancement-material-conductive-bentonite": {
+    dataKey: "p4",
+    seoKey: "lrm",
+    canonicalSlug: "lrm-ground-enhancement-material-conductive-bentonite",
+  },
+  "export-super-active-ground-enhancement-material": {
+    dataKey: "p5",
+    seoKey: "super-active-bentonite",
+    canonicalSlug: "export-super-active-ground-enhancement-material",
+  },
+  "grm-ground-recovering-material-earthing": {
+    dataKey: "p6",
+    seoKey: "grm",
+    canonicalSlug: "grm-ground-recovering-material-earthing",
+  },
+  "sodium-bentonite-electrolyte-ground-enhancement": {
+    dataKey: "p7",
+    seoKey: "sodium-bentonite-electrolyte",
+    canonicalSlug: "sodium-bentonite-electrolyte-ground-enhancement",
+  },
+  "multi-active-industrial-earthing-powder": {
+    dataKey: "p8",
+    seoKey: "multi-active-powder",
+    canonicalSlug: "multi-active-industrial-earthing-powder",
+  },
+};
+
+function resolveProductRoute(id: string): ProductRoute | undefined {
+  return PRODUCT_ROUTES[id];
+}
+
+function absoluteUrl(path: string) {
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+
+  return `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+function jsonLdStringify(item: unknown) {
+  return JSON.stringify(item).replace(/</g, "\\u003c");
+}
+
+
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }> | { id: string };
+}): Promise<Metadata> {
+  const resolvedParams =
+    params instanceof Promise ? await params : params;
+
+  const id = resolvedParams.id;
+  const route = resolveProductRoute(id);
+  const doc = route ? PRODUCT_DOCS[route.dataKey] : undefined;
+  const seo = route ? PRODUCT_SEO[route.seoKey] : undefined;
+
+  if (!route || !doc || !seo) {
+    return {
+      title: `محصولات ارتینگ | ${SITE_NAME}`,
+      description:
+        "محصولات تخصصی ارتینگ، بنتونیت، LRM، GRM و مواد کاهنده مقاومت زمین.",
+      alternates: {
+        canonical: `${SITE_URL}/products/${id}`,
+      },
+      robots: {
+        index: false,
+        follow: true,
+      },
+    };
+  }
+
+  const pageUrl = `${SITE_URL}/products/${route.canonicalSlug}`;
+  const imageUrl = doc.img ? absoluteUrl(doc.img) : SITE_LOGO;
+
+  return {
+    title: seo.title,
+    description: seo.description,
+    keywords: seo.keywords,
+    alternates: {
+      canonical: pageUrl,
+    },
+    openGraph: {
+      title: seo.title,
+      description: seo.description,
+      url: pageUrl,
+      type: "article",
+      siteName: SITE_NAME,
+      locale: "fa_IR",
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: doc.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: seo.title,
+      description: seo.description,
+      images: [imageUrl],
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
+    },
+  };
+}
+
+export default async function ProductDetailsPage(props: {
   params: { id: string } | Promise<{ id: string }>;
 }) {
-  const router = useRouter();
-
-  // ✅ حل Promise بودن params (Next جدید)
   const resolvedParams =
-    typeof (props.params as any)?.then === "function"
-      ? use(props.params as Promise<{ id: string }>)
-      : (props.params as { id: string });
+    props.params instanceof Promise ? await props.params : props.params;
 
-  const id = resolvedParams?.id;
-  const doc = id ? PRODUCT_DOCS[id] : undefined;
+  const id = resolvedParams.id;
+  const route = resolveProductRoute(id);
+  const doc = route ? PRODUCT_DOCS[route.dataKey] : undefined;
 
-  // ✅ اگر متن نبود، صفحه سفید/ارور نده
+  const pageUrl = `${SITE_URL}/products/${route?.canonicalSlug ?? id}`;
+  const seo = route ? PRODUCT_SEO[route.seoKey] : undefined;
+  const imageUrl = doc?.img ? absoluteUrl(doc.img) : SITE_LOGO;
+
+  const breadcrumbJsonLd =
+    doc && seo
+      ? {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "@id": `${pageUrl}#breadcrumb`,
+          itemListElement: [
+            {
+              "@type": "ListItem",
+              position: 1,
+              name: "خانه",
+              item: SITE_URL,
+            },
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: "محصولات",
+              item: `${SITE_URL}/#products`,
+            },
+            {
+              "@type": "ListItem",
+              position: 3,
+              name: doc.title,
+              item: pageUrl,
+            },
+          ],
+        }
+      : null;
+
+  const productJsonLd =
+    doc && seo
+      ? {
+          "@context": "https://schema.org",
+          "@type": "Product",
+          "@id": `${pageUrl}#product`,
+          name: doc.title,
+          alternateName: seo.title,
+          description: doc.subtitle ?? seo.description,
+          image: [imageUrl],
+          url: pageUrl,
+          category: seo.category,
+          brand: {
+            "@type": "Brand",
+            name: SITE_BRAND_EN,
+          },
+          manufacturer: {
+            "@type": "Organization",
+            "@id": `${SITE_URL}/#organization`,
+            name: SITE_NAME,
+            logo: SITE_LOGO,
+          },
+          areaServed: {
+            "@type": "Country",
+            name: "Iran",
+          },
+        }
+      : null;
+
+  const webPageJsonLd =
+    doc && seo
+      ? {
+          "@context": "https://schema.org",
+          "@type": "WebPage",
+          "@id": `${pageUrl}#webpage`,
+          url: pageUrl,
+          name: seo.title,
+          description: seo.description,
+          inLanguage: "fa-IR",
+          isPartOf: {
+            "@id": `${SITE_URL}/#website`,
+          },
+          about: {
+            "@id": `${pageUrl}#product`,
+          },
+          breadcrumb: {
+            "@id": `${pageUrl}#breadcrumb`,
+          },
+        }
+      : null;
+
+  const jsonLdList = [breadcrumbJsonLd, productJsonLd, webPageJsonLd].filter(
+    Boolean
+  );
+
+// ✅ اگر متن نبود، صفحه سفید/ارور نده
   if (!id || !doc) {
     return (
       <main className="mx-auto max-w-5xl px-4 md:px-6 py-10 md:py-16 text-white">
@@ -397,15 +870,13 @@ export default function ProductDetailsPage(props: {
           dir="rtl"
         >
           <div className="mb-6 flex justify-start">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className={backBtnClass}
-              style={{ fontFamily: "BNazanin, Tahoma, system-ui" }}
-            >
-              ← بازگشت
-            </button>
-          </div>
+<Link
+  href="/bentonite"
+  className={backBtnClass}
+  style={{ fontFamily: "BNazanin, Tahoma, system-ui" }}
+>
+  ← بازگشت
+</Link>          </div>
 
           <h1 className="text-2xl md:text-3xl font-bold">مشخصات محصول</h1>
           <p className="mt-3 text-white/80 leading-8">
@@ -425,14 +896,13 @@ export default function ProductDetailsPage(props: {
 
           {/* ✅ دکمه بازگشت پایین هم */}
           <div className="mt-10 flex justify-center">
-            <button
-              type="button"
-              onClick={() => router.back()}
-              className={backBtnClass}
-              style={{ fontFamily: "BNazanin, Tahoma, system-ui" }}
-            >
-              ← بازگشت
-            </button>
+<Link
+  href="/bentonite"
+  className={backBtnClass}
+  style={{ fontFamily: "BNazanin, Tahoma, system-ui" }}
+>
+  ← بازگشت
+</Link>
           </div>
         </article>
       </main>
@@ -444,20 +914,29 @@ export default function ProductDetailsPage(props: {
 
   return (
     <main className="mx-auto max-w-5xl px-4 md:px-6 py-10 md:py-16 text-white">
+      {jsonLdList.map((item, index) => (
+        <script
+          key={index}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: jsonLdStringify(item),
+          }}
+        />
+      ))}
+
       <article
         className="relative bg-black/40 border border-white/10 rounded-3xl px-4 md:px-8 py-8 md:py-10 shadow-2xl"
         dir="rtl"
       >
         {/* ✅ دکمه بازگشت بالا */}
         <div className="absolute right-6 top-6">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className={backBtnClass}
-            style={{ fontFamily: "BNazanin, Tahoma, system-ui" }}
-          >
-            ← بازگشت
-          </button>
+<Link
+  href="/bentonite"
+  className={backBtnClass}
+  style={{ fontFamily: "BNazanin, Tahoma, system-ui" }}
+>
+  ← بازگشت
+</Link>
         </div>
 
         <header className="pt-10 text-center">
@@ -522,14 +1001,13 @@ export default function ProductDetailsPage(props: {
 
         {/* ✅ دکمه بازگشت پایین صفحه (درخواست شما) */}
         <div className="mt-12 flex justify-center">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className={backBtnClass}
-            style={{ fontFamily: "BNazanin, Tahoma, system-ui" }}
-          >
-            ← بازگشت
-          </button>
+<Link
+  href="/bentonite"
+  className={backBtnClass}
+  style={{ fontFamily: "BNazanin, Tahoma, system-ui" }}
+>
+  ← بازگشت
+</Link>
         </div>
       </article>
     </main>

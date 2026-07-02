@@ -221,6 +221,12 @@ export function SiteFooter() {
 
   <ul className="mt-3 grid gap-2 text-[13px] text-white/70">
     <li>
+      <a className="hover:text-white transition font-bold text-white" href="/">
+        صفحه اصلی
+      </a>
+    </li>
+
+    <li>
       <a className="hover:text-white transition" href="#products">
         محصولات
       </a>

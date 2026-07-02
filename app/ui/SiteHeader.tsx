@@ -38,6 +38,7 @@ const flagImages: Record<LanguageCode, string> = {
 };
 
 const quickLinks = [
+  { label: "صفحه اصلی", href: "/", type: "route" },
   { label: "محصولات", href: "#products", type: "hash" },
   { label: "کاربردها", href: "#applications", type: "hash" },
   { label: "مقالات", href: "#blog", type: "hash" },
@@ -240,7 +241,7 @@ export function Header({
           </button>
 
           <Link
-            href="#home"
+            href="/"
             className="flex min-w-0 flex-1 items-center justify-center gap-2"
             onClick={closeAllOverlays}
           >
@@ -288,7 +289,7 @@ export function Header({
         {/* Desktop top bar */}
         <div className="hidden h-14 items-center justify-between gap-4 md:flex">
           <Link
-            href="#home"
+            href="/"
             className="flex min-w-0 items-center gap-3"
             onClick={closeAllOverlays}
           >
@@ -420,6 +421,14 @@ export function Header({
           </div>
 
           <div className="relative flex shrink-0 items-center gap-1.5 lg:gap-2">
+            <Link
+              href="/"
+              onClick={closeAllOverlays}
+              className="inline-flex items-center rounded-xl bg-[#2563eb] px-2.5 py-1.5 text-xs text-white shadow hover:bg-[#1d4ed8] lg:px-3 lg:text-sm"
+            >
+              صفحه اصلی
+            </Link>
+
             <button
               type="button"
               onClick={() => toggleMega("products")}
@@ -474,7 +483,7 @@ export function Header({
             {quickLinks
               .filter(
                 (item) =>
-                  !["#products", "#applications", "#blog"].includes(item.href)
+                  !["/", "#products", "#applications", "#blog"].includes(item.href)
               )
               .map((item) =>
                 renderQuickLink(
