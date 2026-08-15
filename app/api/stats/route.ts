@@ -17,26 +17,6 @@ type Stats = {
   total: number;
 };
 
-const DATABASE_URL =
-  process.env.POSTGRES_URL ||
-  process.env.POSTGRES_PRISMA_URL ||
-  process.env.POSTGRES_URL_NON_POOLING ||
-  process.env.DATABASE_URL ||
-  process.env.STORAGE_URL;
-
-const VISITOR_COOKIE = "mehrab_visitor_id_v2";
-
-const COOKIE_MAX_AGE_SECONDS =
-  60 * 60 * 24 * 365 * 10;
-
-const ONLINE_WINDOW_MINUTES = 2;
-
-const sql = DATABASE_URL
-  ? neon(DATABASE_URL)
-  : null;
-
-let initPromise: Promise<void> | null = null;
-
 type TehranDateInfo = {
   gregorianDate: string;
   persianYear: number;
@@ -45,14 +25,38 @@ type TehranDateInfo = {
   weekStart: string;
 };
 
+const DATABASE_URL =
+  process.env.POSTGRES_URL ||
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.POSTGRES_URL_NON_POOLING ||
+  process.env.DATABASE_URL ||
+  process.env.STORAGE_URL;
+
+const VISITOR_COOKIE = "mehrab_visitor_id_v3";
+
+const COOKIE_MAX_AGE_SECONDS =
+  60 * 60 * 24 * 365 * 10;
+
+const sql = DATABASE_URL
+  ? neon(DATABASE_URL)
+  : null;
+
+let initPromise: Promise<void> | null = null;
+
 /**
- * تاریخ امروز تهران.
+ * تاریخ جاری بر اساس Asia/Tehran.
  *
- * تاریخ Gregorian فقط برای ستون DATE دیتابیس است.
- * ماه و سال آماری با تقویم شمسی ذخیره می‌شوند.
+ * visit_date:
+ * تاریخ میلادی معادل روز تهران برای ستون DATE.
+ *
+ * persianYear / Month / Day:
+ * برای محاسبه ماه و سال شمسی.
+ *
+ * weekStart:
+ * شنبه هفته جاری.
  */
 function getTehranDateInfo(
-  date = new Date()
+  date: Date
 ): TehranDateInfo {
   const gregorianFormatter =
     new Intl.DateTimeFormat("en-CA", {
@@ -66,24 +70,31 @@ function getTehranDateInfo(
     gregorianFormatter.formatToParts(date);
 
   const gYear = Number(
-    gParts.find((x) => x.type === "year")
-      ?.value ?? 0
+    gParts.find(
+      (part) => part.type === "year"
+    )?.value ?? 0
   );
 
   const gMonth = Number(
-    gParts.find((x) => x.type === "month")
-      ?.value ?? 0
+    gParts.find(
+      (part) => part.type === "month"
+    )?.value ?? 0
   );
 
   const gDay = Number(
-    gParts.find((x) => x.type === "day")
-      ?.value ?? 0
+    gParts.find(
+      (part) => part.type === "day"
+    )?.value ?? 0
   );
 
   const gregorianDate =
-    `${gYear}-${String(gMonth).padStart(2, "0")}-${String(
-      gDay
-    ).padStart(2, "0")}`;
+    `${gYear}-${String(gMonth).padStart(
+      2,
+      "0"
+    )}-${String(gDay).padStart(
+      2,
+      "0"
+    )}`;
 
   const persianFormatter =
     new Intl.DateTimeFormat(
@@ -100,75 +111,78 @@ function getTehranDateInfo(
     persianFormatter.formatToParts(date);
 
   const persianYear = Number(
-    pParts.find((x) => x.type === "year")
-      ?.value ?? 0
+    pParts.find(
+      (part) => part.type === "year"
+    )?.value ?? 0
   );
 
   const persianMonth = Number(
-    pParts.find((x) => x.type === "month")
-      ?.value ?? 0
+    pParts.find(
+      (part) => part.type === "month"
+    )?.value ?? 0
   );
 
   const persianDay = Number(
-    pParts.find((x) => x.type === "day")
-      ?.value ?? 0
+    pParts.find(
+      (part) => part.type === "day"
+    )?.value ?? 0
   );
 
   /**
-   * PostgreSQL:
-   * Sunday = 0
-   * Monday = 1
-   * ...
-   * Saturday = 6
+   * هفته ایران:
    *
-   * ما هفته ایران را شنبه تا جمعه می‌خواهیم.
+   * شنبه = روز اول هفته
+   * جمعه = روز آخر هفته
    */
-  const weekdayText =
-    new Intl.DateTimeFormat("en-US", {
-      timeZone: "Asia/Tehran",
-      weekday: "short",
-    }).format(date);
+  const weekday =
+    new Intl.DateTimeFormat(
+      "en-US",
+      {
+        timeZone: "Asia/Tehran",
+        weekday: "short",
+      }
+    ).format(date);
 
-  const daysFromSaturday: Record<
-    string,
-    number
-  > = {
-    Sat: 0,
-    Sun: 1,
-    Mon: 2,
-    Tue: 3,
-    Wed: 4,
-    Thu: 5,
-    Fri: 6,
-  };
+  const daysFromSaturday:
+    Record<string, number> = {
+      Sat: 0,
+      Sun: 1,
+      Mon: 2,
+      Tue: 3,
+      Wed: 4,
+      Thu: 5,
+      Fri: 6,
+    };
 
   const offset =
-    daysFromSaturday[weekdayText] ?? 0;
+    daysFromSaturday[weekday] ?? 0;
 
   /**
-   * ساعت 12 UTC انتخاب شده تا تغییر timezone
-   * هنگام عقب رفتن روز باعث خطای مرزی نشود.
+   * ساعت 12 UTC برای جلوگیری از
+   * جابه‌جایی ناخواسته روز در محاسبه شنبه.
    */
-  const baseUtc = new Date(
-    Date.UTC(
-      gYear,
-      gMonth - 1,
-      gDay,
-      12,
-      0,
-      0
-    )
-  );
+  const weekStartDate =
+    new Date(
+      Date.UTC(
+        gYear,
+        gMonth - 1,
+        gDay,
+        12,
+        0,
+        0
+      )
+    );
 
-  baseUtc.setUTCDate(
-    baseUtc.getUTCDate() - offset
+  weekStartDate.setUTCDate(
+    weekStartDate.getUTCDate() -
+      offset
   );
 
   const weekStart =
-    `${baseUtc.getUTCFullYear()}-${String(
-      baseUtc.getUTCMonth() + 1
+    `${weekStartDate.getUTCFullYear()}-${String(
+      weekStartDate.getUTCMonth() + 1
     ).padStart(2, "0")}-${String(
-      baseUtc.getUTCDate()
+      weekStartDate.getUTCDate()
     ).padStart(2, "0")}`;
 
   return {
@@ -180,15 +194,25 @@ function getTehranDateInfo(
   };
 }
 
+/**
+ * شناسه دائمی Visitor.
+ *
+ * تا زمانی که Cookie مرورگر حذف نشده باشد،
+ * کاربر همان visitor_id را خواهد داشت.
+ */
 function getVisitorId(
   req: NextRequest
 ): string {
   const current =
-    req.cookies.get(VISITOR_COOKIE)?.value;
+    req.cookies.get(
+      VISITOR_COOKIE
+    )?.value;
 
   if (
     current &&
-    /^[a-f0-9-]{20,}$/i.test(current)
+    /^[a-f0-9-]{20,}$/i.test(
+      current
+    )
   ) {
     return current;
   }
@@ -197,12 +221,13 @@ function getVisitorId(
 }
 
 /**
- * جدول‌های V2 مستقل هستند.
+ * جداول V3.
  *
- * بنابراین:
- * - داده قدیمی خراب وارد سیستم جدید نمی‌شود.
- * - Deploy مجدد جدول را حذف نمی‌کند.
- * - Restart شدن Vercel آمار را ریست نمی‌کند.
+ * stats_visitors_v3:
+ * وضعیت Visitor و Online و آخرین Visit معتبر.
+ *
+ * stats_visits_v3:
+ * هر رکورد = یک Visit معتبر.
  */
 async function initDatabase() {
   if (!sql) {
@@ -212,65 +237,406 @@ async function initDatabase() {
   }
 
   await sql`
-    CREATE TABLE IF NOT EXISTS stats_visitors_v2 (
+    CREATE TABLE IF NOT EXISTS stats_visitors_v3 (
       visitor_id TEXT PRIMARY KEY,
-      first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+
+      first_seen_at TIMESTAMPTZ
+        NOT NULL,
+
+      last_seen_at TIMESTAMPTZ
+        NOT NULL,
+
+      last_counted_visit_at
+        TIMESTAMPTZ
     )
   `;
 
   await sql`
-    CREATE TABLE IF NOT EXISTS stats_daily_visits_v2 (
-      visitor_id TEXT NOT NULL,
-      visit_date DATE NOT NULL,
-      persian_year INTEGER NOT NULL,
-      persian_month INTEGER NOT NULL,
-      persian_day INTEGER NOT NULL,
-      first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CREATE TABLE IF NOT EXISTS stats_visits_v3 (
+      id BIGSERIAL PRIMARY KEY,
 
-      PRIMARY KEY (visitor_id, visit_date)
+      visitor_id TEXT
+        NOT NULL,
+
+      visit_time TIMESTAMPTZ
+        NOT NULL,
+
+      visit_date DATE
+        NOT NULL,
+
+      persian_year INTEGER
+        NOT NULL,
+
+      persian_month INTEGER
+        NOT NULL,
+
+      persian_day INTEGER
+        NOT NULL
     )
   `;
 
   await sql`
     CREATE INDEX IF NOT EXISTS
-      idx_stats_visitors_v2_last_seen
-    ON stats_visitors_v2 (last_seen_at)
+      idx_stats_visitors_v3_last_seen
+    ON stats_visitors_v3 (
+      last_seen_at
+    )
   `;
 
   await sql`
     CREATE INDEX IF NOT EXISTS
-      idx_stats_daily_v2_date
-    ON stats_daily_visits_v2 (visit_date)
+      idx_stats_visitors_v3_last_counted
+    ON stats_visitors_v3 (
+      last_counted_visit_at
+    )
   `;
 
   await sql`
     CREATE INDEX IF NOT EXISTS
-      idx_stats_daily_v2_persian
-    ON stats_daily_visits_v2
-      (persian_year, persian_month)
+      idx_stats_visits_v3_date
+    ON stats_visits_v3 (
+      visit_date
+    )
+  `;
+
+  await sql`
+    CREATE INDEX IF NOT EXISTS
+      idx_stats_visits_v3_persian
+    ON stats_visits_v3 (
+      persian_year,
+      persian_month
+    )
+  `;
+
+  await sql`
+    CREATE INDEX IF NOT EXISTS
+      idx_stats_visits_v3_visitor_time
+    ON stats_visits_v3 (
+      visitor_id,
+      visit_time DESC
+    )
   `;
 }
 
-function ensureDatabase() {
+function ensureDatabase():
+  Promise<void> {
   if (!initPromise) {
-    initPromise = initDatabase().catch(
-      (error) => {
-        /**
-         * اگر initialization یک بار شکست خورد،
-         * اجازه می‌دهیم درخواست بعدی دوباره تلاش کند.
-         */
-        initPromise = null;
-        throw error;
-      }
-    );
+    initPromise =
+      initDatabase().catch(
+        (error) => {
+          /**
+           * اگر initialization موقتاً
+           * شکست خورد، درخواست بعدی
+           * دوباره تلاش می‌کند.
+           */
+          initPromise = null;
+
+          throw error;
+        }
+      );
   }
 
   return initPromise;
 }
 
-async function getStats(
-  visitorId: string
+/**
+ * Visitor را ایجاد می‌کند یا
+ * last_seen_at او را تازه می‌کند.
+ *
+ * این عملیات Visit جدید ثبت نمی‌کند.
+ */
+async function touchVisitor(
+  visitorId: string,
+  requestTime: string
+) {
+  if (!sql) {
+    throw new Error(
+      "PostgreSQL is not configured."
+    );
+  }
+
+  await sql`
+    INSERT INTO stats_visitors_v3 (
+      visitor_id,
+      first_seen_at,
+      last_seen_at,
+      last_counted_visit_at
+    )
+
+    VALUES (
+      ${visitorId},
+      ${requestTime}::TIMESTAMPTZ,
+      ${requestTime}::TIMESTAMPTZ,
+      NULL
+    )
+
+    ON CONFLICT (visitor_id)
+
+    DO UPDATE SET
+
+      last_seen_at =
+        EXCLUDED.last_seen_at
+  `;
+}
+
+/**
+ * تلاش برای ثبت Visit جدید.
+ *
+ * قانون:
+ *
+ * اگر Visitor قبلاً Visit نداشته:
+ *   ثبت شود.
+ *
+ * اگر از آخرین Visit معتبر
+ * حداقل 5 ساعت گذشته:
+ *   ثبت شود.
+ *
+ * در غیر این صورت:
+ *   هیچ Visit جدیدی ثبت نشود.
+ *
+ * نکته مهم:
+ *
+ * UPDATE شرطی + RETURNING + INSERT
+ * داخل یک PostgreSQL Statement انجام می‌شود.
+ *
+ * بنابراین دو POST همزمان نمی‌توانند
+ * برای یک visitor دو Visit بسازند.
+ */
+async function registerVisitIfAllowed(
+  visitorId: string,
+  requestTime: string,
+  gregorianDate: string,
+  persianYear: number,
+  persianMonth: number,
+  persianDay: number
+) {
+  if (!sql) {
+    throw new Error(
+      "PostgreSQL is not configured."
+    );
+  }
+
+  await sql`
+    WITH claimed_visit AS (
+
+      UPDATE stats_visitors_v3
+
+      SET
+        last_counted_visit_at =
+          ${requestTime}::TIMESTAMPTZ,
+
+        last_seen_at =
+          ${requestTime}::TIMESTAMPTZ
+
+      WHERE
+        visitor_id =
+          ${visitorId}
+
+        AND
+
+        (
+          last_counted_visit_at
+            IS NULL
+
+          OR
+
+          last_counted_visit_at
+            <=
+          ${requestTime}::TIMESTAMPTZ
+            -
+          INTERVAL '5 hours'
+        )
+
+      RETURNING visitor_id
+    )
+
+    INSERT INTO stats_visits_v3 (
+      visitor_id,
+      visit_time,
+      visit_date,
+      persian_year,
+      persian_month,
+      persian_day
+    )
+
+    SELECT
+      visitor_id,
+      ${requestTime}::TIMESTAMPTZ,
+      ${gregorianDate}::DATE,
+      ${persianYear},
+      ${persianMonth},
+      ${persianDay}
+
+    FROM claimed_visit
+  `;
+}
+
+/**
+ * فقط آمار فعلی را می‌خواند.
+ *
+ * هیچ INSERT یا UPDATE در این Query
+ * انجام نمی‌شود.
+ */
+async function readStats(
+  requestTime: string,
+  gregorianDate: string,
+  persianYear: number,
+  persianMonth: number,
+  weekStart: string
+): Promise<Stats> {
+  if (!sql) {
+    throw new Error(
+      "PostgreSQL is not configured."
+    );
+  }
+
+  const rows = await sql`
+    SELECT
+
+      /**
+       * کاربران حاضر
+       */
+      (
+        SELECT COUNT(*)
+
+        FROM stats_visitors_v3
+
+        WHERE
+          last_seen_at >=
+          ${requestTime}::TIMESTAMPTZ
+            -
+          INTERVAL '2 minutes'
+      )::BIGINT AS online,
+
+      /**
+       * بازدیدهای امروز
+       */
+      (
+        SELECT COUNT(*)
+
+        FROM stats_visits_v3
+
+        WHERE
+          visit_date =
+          ${gregorianDate}::DATE
+      )::BIGINT AS today,
+
+      /**
+       * بازدیدهای دیروز
+       */
+      (
+        SELECT COUNT(*)
+
+        FROM stats_visits_v3
+
+        WHERE
+          visit_date =
+          ${gregorianDate}::DATE
+            -
+          INTERVAL '1 day'
+      )::BIGINT AS yesterday,
+
+      /**
+       * تمام بازدیدهای هفته جاری
+       * از شنبه تا امروز
+       */
+      (
+        SELECT COUNT(*)
+
+        FROM stats_visits_v3
+
+        WHERE
+          visit_date >=
+          ${weekStart}::DATE
+
+          AND
+
+          visit_date <=
+          ${gregorianDate}::DATE
+      )::BIGINT AS week,
+
+      /**
+       * تمام بازدیدهای ماه شمسی جاری
+       */
+      (
+        SELECT COUNT(*)
+
+        FROM stats_visits_v3
+
+        WHERE
+          persian_year =
+          ${persianYear}
+
+          AND
+
+          persian_month =
+          ${persianMonth}
+      )::BIGINT AS month,
+
+      /**
+       * تمام بازدیدهای سال شمسی جاری
+       */
+      (
+        SELECT COUNT(*)
+
+        FROM stats_visits_v3
+
+        WHERE
+          persian_year =
+          ${persianYear}
+      )::BIGINT AS year,
+
+      /**
+       * تمام بازدیدها از اولین Visit V3
+       * تا همین لحظه.
+       */
+      (
+        SELECT COUNT(*)
+
+        FROM stats_visits_v3
+      )::BIGINT AS total
+  `;
+
+  const row =
+    (rows[0] ?? {}) as
+      Partial<Stats>;
+
+  return {
+    online:
+      Number(row.online ?? 0),
+
+    today:
+      Number(row.today ?? 0),
+
+    yesterday:
+      Number(row.yesterday ?? 0),
+
+    week:
+      Number(row.week ?? 0),
+
+    month:
+      Number(row.month ?? 0),
+
+    year:
+      Number(row.year ?? 0),
+
+    total:
+      Number(row.total ?? 0),
+  };
+}
+
+/**
+ * پردازش کامل درخواست.
+ *
+ * registerVisit = true:
+ * POST و بررسی قانون 5 ساعت.
+ *
+ * registerVisit = false:
+ * GET و فقط heartbeat.
+ */
+async function processStats(
+  visitorId: string,
+  registerVisit: boolean
 ): Promise<Stats> {
   if (!sql) {
     throw new Error(
@@ -280,208 +646,156 @@ async function getStats(
 
   await ensureDatabase();
 
+  /**
+   * تمام عملیات این Request
+   * از یک Timestamp واحد استفاده می‌کنند.
+   */
+  const requestDate =
+    new Date();
+
+  const requestTime =
+    requestDate.toISOString();
+
   const {
     gregorianDate,
     persianYear,
     persianMonth,
     persianDay,
     weekStart,
-  } = getTehranDateInfo();
+  } = getTehranDateInfo(
+    requestDate
+  );
 
   /**
-   * یک درخواست SQL:
-   *
-   * 1. Visitor را ایجاد/Online می‌کند.
-   * 2. Visitor روز جاری را فقط یک بار ثبت می‌کند.
-   * 3. تمام آمار را محاسبه می‌کند.
-   *
-   * Refresh یا polling باعث افزایش مجدد
-   * today/week/month/year نمی‌شود.
+   * Visitor را ایجاد یا Online می‌کنیم.
    */
-  const rows = await sql`
-    WITH
-    upsert_visitor AS (
-      INSERT INTO stats_visitors_v2 (
-        visitor_id,
-        first_seen_at,
-        last_seen_at
-      )
-      VALUES (
-        ${visitorId},
-        NOW(),
-        NOW()
-      )
+  await touchVisitor(
+    visitorId,
+    requestTime
+  );
 
-      ON CONFLICT (visitor_id)
-      DO UPDATE
-      SET last_seen_at = NOW()
+  /**
+   * فقط POST حق دارد Visit جدید
+   * ایجاد کند.
+   */
+  if (registerVisit) {
+    await registerVisitIfAllowed(
+      visitorId,
+      requestTime,
+      gregorianDate,
+      persianYear,
+      persianMonth,
+      persianDay
+    );
+  }
 
-      RETURNING visitor_id
-    ),
-
-    insert_today AS (
-      INSERT INTO stats_daily_visits_v2 (
-        visitor_id,
-        visit_date,
-        persian_year,
-        persian_month,
-        persian_day,
-        first_seen_at
-      )
-
-      VALUES (
-        ${visitorId},
-        ${gregorianDate}::DATE,
-        ${persianYear},
-        ${persianMonth},
-        ${persianDay},
-        NOW()
-      )
-
-      ON CONFLICT (
-        visitor_id,
-        visit_date
-      )
-      DO NOTHING
-
-      RETURNING visitor_id
-    )
-
-    SELECT
-
-      (
-        SELECT COUNT(*)
-        FROM stats_visitors_v2
-        WHERE
-          last_seen_at >=
-          NOW() -
-          (
-            ${ONLINE_WINDOW_MINUTES}
-            || ' minutes'
-          )::INTERVAL
-      )::INT AS online,
-
-      (
-        SELECT COUNT(*)
-        FROM stats_daily_visits_v2
-        WHERE
-          visit_date =
-          ${gregorianDate}::DATE
-      )::INT AS today,
-
-      (
-        SELECT COUNT(*)
-        FROM stats_daily_visits_v2
-        WHERE
-          visit_date =
-          ${gregorianDate}::DATE -
-          INTERVAL '1 day'
-      )::INT AS yesterday,
-
-      (
-        SELECT COUNT(
-          DISTINCT visitor_id
-        )
-        FROM stats_daily_visits_v2
-        WHERE
-          visit_date >=
-          ${weekStart}::DATE
-          AND
-          visit_date <=
-          ${gregorianDate}::DATE
-      )::INT AS week,
-
-      (
-        SELECT COUNT(
-          DISTINCT visitor_id
-        )
-        FROM stats_daily_visits_v2
-        WHERE
-          persian_year =
-          ${persianYear}
-          AND
-          persian_month =
-          ${persianMonth}
-      )::INT AS month,
-
-      (
-        SELECT COUNT(
-          DISTINCT visitor_id
-        )
-        FROM stats_daily_visits_v2
-        WHERE
-          persian_year =
-          ${persianYear}
-      )::INT AS year,
-
-      (
-        SELECT COUNT(*)
-        FROM stats_visitors_v2
-      )::INT AS total
-  `;
-
-  const row =
-    (rows[0] ?? {}) as Partial<Stats>;
-
-  return {
-    online: Number(row.online ?? 0),
-    today: Number(row.today ?? 0),
-    yesterday: Number(
-      row.yesterday ?? 0
-    ),
-    week: Number(row.week ?? 0),
-    month: Number(row.month ?? 0),
-    year: Number(row.year ?? 0),
-    total: Number(row.total ?? 0),
-  };
+  /**
+   * بسیار مهم:
+   *
+   * آمار بعد از پایان INSERT خوانده می‌شود.
+   *
+   * بنابراین اگر همین درخواست
+   * Visit جدید ساخته باشد،
+   * همان Visit فوراً در:
+   *
+   * today
+   * week
+   * month
+   * year
+   * total
+   *
+   * دیده می‌شود.
+   */
+  return readStats(
+    requestTime,
+    gregorianDate,
+    persianYear,
+    persianMonth,
+    weekStart
+  );
 }
 
-function jsonResponse(
+function createStatsResponse(
   stats: Stats,
   visitorId: string
 ) {
-  const res = NextResponse.json(
-    stats,
-    {
-      status: 200,
-      headers: {
-        "Cache-Control":
-          "no-store, no-cache, must-revalidate, proxy-revalidate",
-        Pragma: "no-cache",
-        Expires: "0",
-        "Surrogate-Control":
-          "no-store",
-      },
-    }
-  );
+  const response =
+    NextResponse.json(
+      stats,
+      {
+        status: 200,
 
-  res.cookies.set(
+        headers: {
+          "Cache-Control":
+            "no-store, no-cache, must-revalidate, proxy-revalidate",
+
+          Pragma:
+            "no-cache",
+
+          Expires:
+            "0",
+
+          "Surrogate-Control":
+            "no-store",
+        },
+      }
+    );
+
+  response.cookies.set(
     VISITOR_COOKIE,
     visitorId,
     {
       httpOnly: true,
+
       sameSite: "lax",
+
       secure:
         process.env.NODE_ENV ===
         "production",
+
       path: "/",
+
       maxAge:
         COOKIE_MAX_AGE_SECONDS,
     }
   );
 
-  return res;
+  return response;
+}
+
+function createErrorResponse() {
+  /**
+   * اگر Neon موقتاً قطع باشد
+   * عدد صفر جعلی برنمی‌گردانیم.
+   *
+   * Footer آخرین مقدار سالم را
+   * نگه خواهد داشت.
+   */
+  return NextResponse.json(
+    {
+      error:
+        "Statistics database is temporarily unavailable.",
+    },
+    {
+      status: 503,
+
+      headers: {
+        "Cache-Control":
+          "no-store",
+      },
+    }
+  );
 }
 
 /**
  * GET
  *
- * همین درخواست:
- * - حضور کاربر را Online می‌کند.
- * - اگر امروز هنوز ثبت نشده، یک Visit روزانه ثبت می‌کند.
- * - آمار صحیح را برمی‌گرداند.
+ * وظیفه:
  *
- * Refresh مجدد Visit اضافه نمی‌کند.
+ * - heartbeat کاربران حاضر
+ * - خواندن آمار
+ *
+ * هرگز Visit جدید نمی‌سازد.
  */
 export async function GET(
   req: NextRequest
@@ -491,38 +805,70 @@ export async function GET(
 
   try {
     const stats =
-      await getStats(visitorId);
+      await processStats(
+        visitorId,
+        false
+      );
 
-    return jsonResponse(
+    return createStatsResponse(
       stats,
       visitorId
     );
   } catch (error) {
     console.error(
-      "Stats API error:",
+      "GET Stats API error:",
       error
     );
 
-    /**
-     * مهم:
-     *
-     * دیگر اعداد صفر جعلی برنمی‌گردانیم.
-     * اگر Neon موقتاً قطع باشد HTTP 503
-     * داده می‌شود و Footer باید آخرین آمار
-     * معتبر خودش را حفظ کند.
-     */
-    return NextResponse.json(
-      {
-        error:
-          "Statistics database is temporarily unavailable.",
-      },
-      {
-        status: 503,
-        headers: {
-          "Cache-Control":
-            "no-store",
-        },
-      }
+    return createErrorResponse();
+  }
+}
+
+/**
+ * POST
+ *
+ * وظیفه:
+ *
+ * بررسی ورود واقعی Visitor.
+ *
+ * اگر:
+ *
+ * now - last_counted_visit >= 5 hours
+ *
+ * باشد یک Visit جدید ثبت می‌شود.
+ *
+ * مثال:
+ *
+ * 07:00 -> Visit 1
+ * 09:15 -> no
+ * 11:59 -> no
+ * 12:01 -> Visit 2
+ * 16:47 -> no
+ * 17:05 -> Visit 3
+ */
+export async function POST(
+  req: NextRequest
+) {
+  const visitorId =
+    getVisitorId(req);
+
+  try {
+    const stats =
+      await processStats(
+        visitorId,
+        true
+      );
+
+    return createStatsResponse(
+      stats,
+      visitorId
     );
+  } catch (error) {
+    console.error(
+      "POST Stats API error:",
+      error
+    );
+
+    return createErrorResponse();
   }
 }

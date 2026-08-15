@@ -28,35 +28,148 @@ function useServerVisitStats(): Stats {
   useEffect(() => {
     let alive = true;
 
-    async function loadStats() {
+    function applyStats(data: Stats) {
+      if (!alive) {
+        return;
+      }
+
+      setStats({
+        online: Number(data.online ?? 0),
+        today: Number(data.today ?? 0),
+        yesterday: Number(data.yesterday ?? 0),
+        week: Number(data.week ?? 0),
+        month: Number(data.month ?? 0),
+        year: Number(data.year ?? 0),
+        total: Number(data.total ?? 0),
+      });
+    }
+
+    /**
+     * POST:
+     *
+     * فقط برای ورود/بازگشت واقعی.
+     *
+     * Backend خودش بررسی می‌کند آیا
+     * 5 ساعت از آخرین Visit گذشته یا نه.
+     */
+    async function registerVisit() {
       try {
-        const res = await fetch("/api/stats", { cache: "no-store" });
-        if (!res.ok) return;
+        const res = await fetch(
+          "/api/stats",
+          {
+            method: "POST",
+            cache: "no-store",
+          }
+        );
 
-        const data = (await res.json()) as Stats;
-
-        if (alive) {
-          setStats({
-            online: Number(data.online || 0),
-            today: Number(data.today || 0),
-            yesterday: Number(data.yesterday || 0),
-            week: Number(data.week || 0),
-            month: Number(data.month || 0),
-            year: Number(data.year || 0),
-            total: Number(data.total || 0),
-          });
+        if (!res.ok) {
+          return;
         }
-      } catch (err) {
-        console.error("Stats API error:", err);
+
+        const data =
+          (await res.json()) as Stats;
+
+        applyStats(data);
+      } catch (error) {
+        console.error(
+          "Stats POST error:",
+          error
+        );
       }
     }
 
-    loadStats();
-    const timer = window.setInterval(loadStats, 30000);
+    /**
+     * GET:
+     *
+     * فقط Online را تازه می‌کند
+     * و آمار را می‌خواند.
+     *
+     * هیچ Visit جدیدی ایجاد نمی‌کند.
+     */
+    async function loadStats() {
+      try {
+        const res = await fetch(
+          "/api/stats",
+          {
+            method: "GET",
+            cache: "no-store",
+          }
+        );
+
+        if (!res.ok) {
+          /**
+           * اگر Neon موقتاً خطا داد،
+           * مقدار سالم قبلی را نگه می‌داریم.
+           */
+          return;
+        }
+
+        const data =
+          (await res.json()) as Stats;
+
+        applyStats(data);
+      } catch (error) {
+        console.error(
+          "Stats GET error:",
+          error
+        );
+      }
+    }
+
+    /**
+     * Load اولیه سایت:
+     * یک بار Visit بررسی می‌شود.
+     */
+    registerVisit();
+
+    /**
+     * Online heartbeat.
+     *
+     * هر 60 ثانیه کافی است چون
+     * Online Window دو دقیقه است.
+     *
+     * نسبت به 30 ثانیه قبلی
+     * مصرف Neon را نصف می‌کند.
+     */
+    const timer = window.setInterval(
+      loadStats,
+      60000
+    );
+
+    /**
+     * اگر کاربر Tab را ترک کند
+     * و بعد دوباره برگردد،
+     * دوباره قانون 5 ساعت بررسی می‌شود.
+     *
+     * اگر کمتر از 5 ساعت باشد:
+     * هیچ Visit جدیدی ثبت نمی‌شود.
+     *
+     * اگر 5 ساعت یا بیشتر باشد:
+     * Visit جدید ثبت می‌شود.
+     */
+    function handleVisibilityChange() {
+      if (
+        document.visibilityState ===
+        "visible"
+      ) {
+        registerVisit();
+      }
+    }
+
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibilityChange
+    );
 
     return () => {
       alive = false;
+
       window.clearInterval(timer);
+
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibilityChange
+      );
     };
   }, []);
 
