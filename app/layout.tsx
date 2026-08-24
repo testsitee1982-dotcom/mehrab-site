@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+import { Analytics } from "@vercel/analytics/next";
 import { GlobalBackground } from "./ui/GlobalBackground";
 import { SiteHeader } from "./ui/SiteHeader";
 import { ContactSection } from "./ui/ContactSection";
@@ -128,6 +129,7 @@ export default function RootLayout({
         {children}
         <ContactSection />
         <SiteFooter />
+        <Analytics />
       </body>
     </html>
   );
