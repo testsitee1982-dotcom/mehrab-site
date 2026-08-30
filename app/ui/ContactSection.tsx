@@ -2,12 +2,13 @@
 
 import React, { useId, useMemo, useState } from "react";
 
-const MAP_EMBED_SRC =
-  "https://www.google.com/maps/embed?pb=!1m10!1m8!1m3!1d1620.114558265374!2d51.42422728650661!3d35.695979067133514!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sfa!2s!4v1767857030698!5m2!1sfa!2s";
-
 const OFFICE_ADDRESS =
-  "تهران - خیابان لاله‌زار - کوچه حمیدی امین‌زاده - مرکز تجاری ایران - پلاک (10) - طبقه دوم - واحد (14)";
+  "استان تهران - شهرستان ری - بخش خاوران - روستای خاوران غربی - شهر لپه زنک - محله لپه زنک - خیابان آزادی - کوچه گلستان سوم - پلاک ۲۰ - طبقه همکف - کدپستی ۱۸۶۵۱۴۱۰۰۹";
 
+const OFFICE_LATITUDE = 35.571440;
+const OFFICE_LONGITUDE = 51.593410;
+
+const MAP_EMBED_SRC = `https://www.google.com/maps?q=${OFFICE_LATITUDE},${OFFICE_LONGITUDE}&z=19&output=embed`;
 export function ContactSection() {
   const formId = useId();
   const nameId = `${formId}-name`;
@@ -41,13 +42,13 @@ export function ContactSection() {
     }
   };
 
-  const openMap = () => {
-    window.open(
-      `https://www.google.com/maps?q=${encodeURIComponent(OFFICE_ADDRESS)}`,
-      "_blank",
-      "noopener,noreferrer"
-    );
-  };
+const openMap = () => {
+  window.open(
+    `https://www.google.com/maps?q=${OFFICE_LATITUDE},${OFFICE_LONGITUDE}`,
+    "_blank",
+    "noopener,noreferrer"
+  );
+};
 
   return (
     <section id="contact" style={styles.section}>
@@ -146,7 +147,11 @@ export function ContactSection() {
             </div>
 
             <div style={styles.cardFooter}>
-              <button type="button" style={styles.primaryButton} onClick={openMap}>
+              <button
+                type="button"
+                style={styles.primaryButton}
+                onClick={openMap}
+              >
                 باز کردن در نقشه
               </button>
 
