@@ -5,8 +5,8 @@ import React, { useId, useMemo, useState } from "react";
 const OFFICE_ADDRESS =
   "استان تهران - شهرستان ری - بخش خاوران - روستای خاوران غربی - شهر لپه زنک - محله لپه زنک - خیابان آزادی - کوچه گلستان سوم - پلاک ۲ - طبقه همکف - کدپستی ۱۸۶۵۱۴۱۰۰۹";
 
-const OFFICE_LATITUDE = 35.571440;
-const OFFICE_LONGITUDE = 51.593410;
+const OFFICE_LATITUDE = 35.562199;
+const OFFICE_LONGITUDE = 51.590324;
 
 const MAP_EMBED_SRC = `https://www.google.com/maps?q=${OFFICE_LATITUDE},${OFFICE_LONGITUDE}&z=19&output=embed`;
 export function ContactSection() {
