@@ -665,6 +665,10 @@ function FeaturedProducts({ lang }: { lang: LanguageCode }) {
   const isRTL = useRTL(lang);
 
   const [cart, setCart] = useState<Record<string, number>>({});
+  const [cartReady, setCartReady] = useState(false);
+  const [availability, setAvailability] = useState<Record<string, boolean> | null>(null);
+  const [paymentReady, setPaymentReady] = useState(false);
+  const [catalogError, setCatalogError] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
 
   const [orderOpen, setOrderOpen] = useState(false);
@@ -674,6 +678,38 @@ function FeaturedProducts({ lang }: { lang: LanguageCode }) {
   const [customerNote, setCustomerNote] = useState("");
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<"ok" | "error" | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("mehrab-cart-v1");
+      if (saved) {
+        const parsed = JSON.parse(saved) as Record<string, unknown>;
+        const cleaned: Record<string,number> = {};
+        for (const item of products) {
+          const qty = parsed[item.id];
+          if (typeof qty === "number" && Number.isInteger(qty) && qty > 0 && qty <= 100) cleaned[item.id] = qty;
+        }
+        setCart(cleaned);
+      }
+    } catch { /* Damaged local data must not break checkout. */ }
+    setCartReady(true);
+    const refresh = () => {
+      void fetch("/api/shop/catalog", {cache:"no-store"}).then(async r => {
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || "دریافت موجودی انجام نشد");
+        setAvailability(data.availability);
+        setPaymentReady(data.paymentReady === true);
+        setCatalogError("");
+      }).catch(e => {setCatalogError((e as Error).message);setAvailability(null);});
+    };
+    refresh();
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, []);
+
+  useEffect(() => {
+    if (cartReady) localStorage.setItem("mehrab-cart-v1", JSON.stringify(cart));
+  }, [cart, cartReady]);
 
   const badges: Record<string, string> = {
     p1: "پرفروش",
@@ -709,6 +745,7 @@ function FeaturedProducts({ lang }: { lang: LanguageCode }) {
   const cartTotal = cartItems.reduce((sum, item) => sum + item.lineTotal, 0);
 
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("openCart") === "1") setCartOpen(true);
     const handler = () => setCartOpen(true);
 
     window.addEventListener("open-cart-sidebar", handler);
@@ -733,6 +770,7 @@ function FeaturedProducts({ lang }: { lang: LanguageCode }) {
   }, [cartCount]);
 
   const handleAddToCart = (id: string) => {
+    if (!availability?.[id]) return;
     setCart((prev) => ({
       ...prev,
       [id]: (prev[id] ?? 0) + 1,
@@ -744,7 +782,8 @@ function FeaturedProducts({ lang }: { lang: LanguageCode }) {
   const handleChangeQty = (id: string, delta: number) => {
     setCart((prev) => {
       const next = { ...prev };
-      const updated = (next[id] ?? 0) + delta;
+      const updated = Math.min(100, (next[id] ?? 0) + delta);
+      if (delta > 0 && !availability?.[id]) return next;
 
       if (updated <= 0) {
         delete next[id];
@@ -760,65 +799,39 @@ function FeaturedProducts({ lang }: { lang: LanguageCode }) {
     setCart({});
   };
 
-  const handleSubmitOrder = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmitOrder = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     setSendResult(null);
-
-    if (!customerName.trim() || !customerPhone.trim()) {
-      alert("لطفاً نام و شماره تماس را وارد کنید.");
+    if (!paymentReady) {
+      alert("نام صاحب حساب بانکی هنوز در تنظیمات فروشگاه ثبت نشده است. لطفاً بعداً تلاش کنید.");
       return;
     }
-
-    if (cartItems.length === 0) {
-      alert("سبد خرید خالی است.");
+    if (!customerName.trim() || !customerPhone.trim() || !customerAddress.trim()) {
+      alert("لطفاً نام، شماره موبایل و آدرس تحویل را تکمیل کنید.");
       return;
     }
-
+    if (!cartItems.length) return;
     setSending(true);
-
-    const lines: string[] = [
-      "🧾 سفارش جدید از وب‌سایت",
-      "",
-      `👤 نام: ${customerName.trim()}`,
-      `📞 تلفن: ${customerPhone.trim()}`,
-    ];
-
-    if (customerAddress.trim()) {
-      lines.push(`📍 آدرس: ${customerAddress.trim()}`);
+    try {
+      const response = await fetch("/api/shop/order", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          customer: {name:customerName,phone:customerPhone,address:customerAddress,note:customerNote},
+          items: cartItems.map(({product,qty})=>({id:product.id,qty})),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "ثبت سفارش ناموفق بود");
+      localStorage.removeItem("mehrab-cart-v1");
+      setCart({});
+      window.location.assign(`/order/${encodeURIComponent(data.code)}`);
+    } catch (err) {
+      setSendResult("error");
+      alert((err as Error).message);
+    } finally {
+      setSending(false);
     }
-
-    if (customerNote.trim()) {
-      lines.push(`📝 توضیحات: ${customerNote.trim()}`);
-    }
-
-    lines.push("", "📦 اقلام سفارش:");
-
-    cartItems.forEach(({ product, qty, lineTotal }, index) => {
-      lines.push(
-        `${index + 1}. ${product.name} × ${qty} = ${formatPrice(lineTotal)} تومان`
-      );
-    });
-
-    lines.push("", `💰 جمع کل: ${formatPrice(cartTotal)} تومان`);
-
-    const message = lines.join("\n");
-    const telegramUsername = "YOUR_TELEGRAM_USERNAME";
-    const telegramUrl = `https://t.me/${telegramUsername}?text=${encodeURIComponent(
-      message
-    )}`;
-
-    window.open(telegramUrl, "_blank");
-
-    setSending(false);
-    setSendResult("ok");
-    setCart({});
-    setCartOpen(false);
-    setOrderOpen(false);
-    setCustomerName("");
-    setCustomerPhone("");
-    setCustomerAddress("");
-    setCustomerNote("");
   };
 
   return (
@@ -866,7 +879,7 @@ function FeaturedProducts({ lang }: { lang: LanguageCode }) {
           }}
         >
           <Link
-            href={`/products/${product.id}`}
+            href={`/shop/${product.id}`}
             className="coverLink"
             aria-label={`مشاهده مشخصات ${product.name}`}
           />
@@ -883,7 +896,7 @@ function FeaturedProducts({ lang }: { lang: LanguageCode }) {
             className={`${isRTL ? bnazanin.className : ""} title text-lg md:text-xl font-bold text-white text-center mt-2 mb-2`}
           >
             <Link
-              href={`/products/${product.id}`}
+              href={`/shop/${product.id}`}
               className="hover:text-amber-300 transition"
             >
               {product.name}
@@ -903,18 +916,22 @@ function FeaturedProducts({ lang }: { lang: LanguageCode }) {
             </span>
           </div>
 
+          <div className="text-center mb-2 text-sm font-bold">
+            {availability === null ? <span className="text-white/60">در حال بررسی موجودی</span> : availability[product.id] ? <span className="text-emerald-300">موجود</span> : <span className="text-rose-300">ناموجود</span>}
+          </div>
           <div className="flex justify-center gap-3 mt-1 mb-2">
             <button
               type="button"
               onClick={() => handleAddToCart(product.id)}
-              className={`${bnazanin.className} btnPrimary`}
+              disabled={!availability?.[product.id]}
+              className={`${bnazanin.className} btnPrimary disabled:opacity-40 disabled:cursor-not-allowed`}
             >
               <Icon name="ShoppingCart" size={16} />
               {dict.addToCart}
             </button>
 
             <Link
-              href={`/products/${product.id}`}
+              href={`/shop/${product.id}`}
               className={`btnGhost ${bnazanin.className}`}
             >
               <Icon name="BookOpenText" size={16} />
@@ -1050,6 +1067,11 @@ function FeaturedProducts({ lang }: { lang: LanguageCode }) {
   ))}
 </div>
 
+      <div className="mt-6 flex flex-wrap items-center gap-4">
+        <Link href="/track-order" className="rounded-xl border border-amber-400/60 bg-amber-400/10 px-4 py-2 text-amber-200 hover:bg-amber-400/20">پیگیری سفارش و مشاهده وضعیت پرداخت</Link>
+        {catalogError && <span role="alert" className="text-rose-300">{catalogError}</span>}
+      </div>
+
       {/* دکمه شناور برای باز کردن سبد وقتی بسته است */}
       {cartCount > 0 && !cartOpen && (
         <button
@@ -1178,8 +1200,7 @@ function FeaturedProducts({ lang }: { lang: LanguageCode }) {
             <p
               className={`${bnazanin.className} text-[11px] text-white/40 leading-relaxed`}
             >
-              هزینه ارسال، مالیات و تخفیف‌ها در مرحلهٔ نهایی سفارش هماهنگ
-              می‌شود.
+              قیمت نمایش‌داده‌شده مربوط به کالاهاست. درباره هزینه ارسال قبل از واریز با فروشنده هماهنگ کنید.
             </p>
 
             <div className="flex gap-2">
@@ -1269,7 +1290,7 @@ function FeaturedProducts({ lang }: { lang: LanguageCode }) {
                   htmlFor="customerAddress"
                   className="text-sm text-white/80"
                 >
-                  آدرس (اختیاری)
+                  آدرس تحویل *
                 </label>
 
                 <textarea
@@ -1299,12 +1320,9 @@ function FeaturedProducts({ lang }: { lang: LanguageCode }) {
                 />
               </div>
 
-              {sendResult === "ok" && (
-                <div className="rounded-xl bg-emerald-600/15 border border-emerald-500/40 px-3 py-2 text-xs text-emerald-200">
-                  سفارش شما ثبت شد. لطفاً در صفحهٔ باز شدهٔ تلگرام، پیام را ارسال
-                  کنید.
-                </div>
-              )}
+              <p className="text-xs leading-6 text-white/70">پس از ثبت، یک کد پیگیری دریافت می‌کنید و به صفحه اطلاعات کارت‌به‌کارت و بارگذاری رسید منتقل می‌شوید. سفارش تنها بعد از تأیید واریز توسط مدیر تأیید خواهد شد.</p>
+              {!paymentReady && <p className="text-amber-300 text-xs">پرداخت تا زمان تکمیل نام صاحب کارت در تنظیمات فروشگاه غیرفعال است.</p>}
+              {sendResult === "error" && <p role="alert" className="text-rose-300">ثبت سفارش انجام نشد؛ پیام خطا را بررسی کنید.</p>}
 
               <div className="mt-3 flex items-center justify-between gap-3">
                 <button
@@ -1320,10 +1338,10 @@ function FeaturedProducts({ lang }: { lang: LanguageCode }) {
 
                 <button
                   type="submit"
-                  disabled={sending}
+                  disabled={sending || !paymentReady}
                   className="flex-1 rounded-xl bg-[var(--brand-primary)] px-3 py-2 text-sm font-bold text-white hover:brightness-110 disabled:opacity-60"
                 >
-                  {sending ? "در حال آماده‌سازی…" : "ارسال سفارش"}
+                  {sending ? "در حال ثبت سفارش..." : "ثبت سفارش و دریافت کد پیگیری"}
                 </button>
               </div>
             </form>

@@ -1,6 +1,9 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import { products as shopProducts } from "@/app/lib/products";
+import { getShopAvailability } from "@/app/lib/shop-db";
+import { ShopProductAdd } from "@/app/shop/[id]/shop-product-add";
 import Image from "next/image";
 import { SITE_BRAND_EN, SITE_LOGO, SITE_NAME, SITE_URL } from "@/app/lib/seo";
 
@@ -776,6 +779,9 @@ export default async function ProductDetailsPage(props: {
   const pageUrl = `${SITE_URL}/products/${route?.canonicalSlug ?? id}`;
   const seo = route ? PRODUCT_SEO[route.seoKey] : undefined;
   const imageUrl = doc?.img ? absoluteUrl(doc.img) : SITE_LOGO;
+  const shopProduct = shopProducts.find(p => p.slug === route?.canonicalSlug);
+  const shopAvailability = shopProduct ? await getShopAvailability().catch(() => ({} as Record<string, boolean>)) : {};
+
 
   const breadcrumbJsonLd =
     doc && seo
@@ -832,6 +838,13 @@ export default async function ProductDetailsPage(props: {
             "@type": "Country",
             name: "Iran",
           },
+          ...(shopProduct ? {offers: {
+            "@type": "Offer",
+            url: `${SITE_URL}/shop/${shopProduct.id}`,
+            priceCurrency: "IRR",
+            price: shopProduct.price * 10,
+            availability: shopAvailability[shopProduct.id] ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+          }} : {}),
         }
       : null;
 
@@ -956,6 +969,12 @@ export default async function ProductDetailsPage(props: {
           </div>
         </header>
 
+        {shopProduct && (
+          <div className="mt-6 flex flex-col items-center gap-3 rounded-xl border border-white/20 bg-white/5 p-5">
+            <p className="text-lg text-amber-300 font-bold">قیمت: {shopProduct.price.toLocaleString("fa-IR")} تومان</p>
+            <ShopProductAdd productId={shopProduct.id} initialAvailable={shopAvailability[shopProduct.id] === true} />
+          </div>
+        )}
         {/* ✅ تصویر محصول */}
         {doc.img ? (
           <div className="mt-8 flex justify-center">
@@ -1000,6 +1019,16 @@ export default async function ProductDetailsPage(props: {
         </div>
 
         {/* ✅ دکمه بازگشت پایین صفحه (درخواست شما) */}
+        {shopProducts.find((p) => p.slug === route?.canonicalSlug) ? (
+          <div className="mt-10 text-center">
+            <Link
+              href={`/shop/${shopProducts.find((p) => p.slug === route?.canonicalSlug)!.id}`}
+              className="inline-block rounded-xl bg-amber-500 px-6 py-3 font-bold text-slate-900"
+            >
+              مشاهده قیمت، موجودی و خرید این محصول
+            </Link>
+          </div>
+        ) : null}
         <div className="mt-12 flex justify-center">
 <Link
   href="/bentonite"

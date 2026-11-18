@@ -35,3 +35,7 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 enamad verification
+
+## Mehrab card-to-card shop
+
+برای قابلیت‌های سبد خرید، موجودی، ثبت سفارش، دریافت رسید و مدیریت، فایل `SETUP-SHOP-FA.md` را بخوانید. مسیر آمار `app/api/stats/route.ts` تغییر نکرده است. قبل از انتشار، نام صاحب حساب و رمز پنل مدیریت باید در Vercel تنظیم شوند.

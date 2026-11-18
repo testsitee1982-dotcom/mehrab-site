@@ -40,6 +40,7 @@ const flagImages: Record<LanguageCode, string> = {
 const quickLinks = [
   { label: "صفحه اصلی", href: "/", type: "route" },
   { label: "محصولات", href: "#products", type: "hash" },
+  { label: "پیگیری سفارش", href: "/track-order", type: "route" },
   { label: "کاربردها", href: "#applications", type: "hash" },
   { label: "مقالات", href: "#blog", type: "hash" },
   { label: "ویدیو", href: "/videos", type: "route" },
@@ -514,7 +515,7 @@ export function Header({
                           {products.slice(0, 6).map((product) => (
                             <Link
                               key={product.id}
-                              href={`/products/${product.id}`}
+                              href={`/shop/${product.id}`}
                               onClick={() => setOpenMega(null)}
                               className="group rounded-xl border border-white/10 p-3 hover:bg-white/5"
                             >
