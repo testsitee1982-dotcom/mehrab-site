@@ -9,6 +9,7 @@ export type Product = {
   tds: string;
   price: number;
   specs: string[];
+  guarantee?: string;
 };
 
 export const products = [

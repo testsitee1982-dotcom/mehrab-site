@@ -1,8 +1,10 @@
+export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
 import Link from "next/link";
 import { products as shopProducts } from "@/app/lib/products";
 import { getShopAvailability } from "@/app/lib/shop-db";
+import { getTorobMetaTags } from "@/app/lib/torob";
 import { ShopProductAdd } from "@/app/shop/[id]/shop-product-add";
 import Image from "next/image";
 import { SITE_BRAND_EN, SITE_LOGO, SITE_NAME, SITE_URL } from "@/app/lib/seo";
@@ -723,11 +725,20 @@ export async function generateMetadata({
 
   const pageUrl = `${SITE_URL}/products/${route.canonicalSlug}`;
   const imageUrl = doc.img ? absoluteUrl(doc.img) : SITE_LOGO;
+  const shopProduct = shopProducts.find((p) => p.slug === route.canonicalSlug);
+  const availability = shopProduct
+    ? await getShopAvailability().catch(() => ({} as Record<string, boolean>))
+    : {};
+  const torobTags = shopProduct
+    ? getTorobMetaTags(shopProduct, availability[shopProduct.id] === true)
+    : undefined;
+  const productImageUrl = shopProduct ? absoluteUrl(shopProduct.img) : imageUrl;
 
   return {
     title: seo.title,
     description: seo.description,
     keywords: seo.keywords,
+    other: torobTags,
     alternates: {
       canonical: pageUrl,
     },
@@ -740,7 +751,7 @@ export async function generateMetadata({
       locale: "fa_IR",
       images: [
         {
-          url: imageUrl,
+          url: productImageUrl,
           width: 1200,
           height: 630,
           alt: doc.title,
@@ -751,7 +762,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: seo.title,
       description: seo.description,
-      images: [imageUrl],
+      images: [productImageUrl],
     },
     robots: {
       index: true,

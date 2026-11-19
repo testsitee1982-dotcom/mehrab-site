@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Torob reads metadata from the server-rendered <head>, without JavaScript.
+  // Disable metadata streaming so unknown crawler user-agents receive <meta> in <head>.
+  htmlLimitedBots: /.*/,
   poweredByHeader: false,
 
   async headers() {

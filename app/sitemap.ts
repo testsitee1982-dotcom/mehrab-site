@@ -106,6 +106,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.85,
     },
 
+    // Shop product pages (canonical URLs for Torob)
+    ...products.map((product) => ({
+      url: `${SITE_URL}/shop/${product.id}`,
+      lastModified,
+      changeFrequency: "daily" as const,
+      priority: 0.9,
+    })),
+
     // محصولات
     ...products.map((product) => ({
       url: `${SITE_URL}/products/${product.slug}`,
